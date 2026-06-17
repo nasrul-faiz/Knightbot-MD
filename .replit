@@ -30,7 +30,7 @@ args = "bash start.sh"
 outputType = "console"
 
 [deployment]
-deploymentTarget = "vm"
+deploymentTarget = "cloudrun"
 run = ["bash", "start.sh"]
 
 [[ports]]
