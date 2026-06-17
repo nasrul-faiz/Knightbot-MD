@@ -27,8 +27,25 @@ if (!global.dashboardLogs) global.dashboardLogs = []
 // Intercept console.log/error for logs
 const originalLog = console.log
 const originalError = console.error
+// Noise patterns to suppress from dashboard logs (still print to terminal)
+const LOG_SUPPRESS = [
+    /Failed to decrypt message/i,
+    /doDecryptWhisperMessage/i,
+    /verifyMAC/i,
+    /session_cipher/i,
+    /Closing session/i,
+    /Removing old closed session/i,
+    /pendingPreKey/i,
+    /ephemeralKeyPair/i,
+    /lastRemoteEphemeralKey/i,
+    /registrationId/i,
+    /baseKeyType/i,
+]
+function isSuppressed(msg) { return LOG_SUPPRESS.some(re => re.test(msg)) }
+
 function addLog(level, args) {
     const msg = args.map(a => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ')
+    if (isSuppressed(msg)) return
     global.dashboardLogs.push({ time: Date.now(), level, msg })
     if (global.dashboardLogs.length > 200) global.dashboardLogs.shift()
 }
