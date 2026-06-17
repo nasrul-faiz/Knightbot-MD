@@ -1,8 +1,8 @@
 #!/bin/bash
 # Startup script for Knight Bot
-# Ensures stub modules are in place before starting
+# Works on Replit and Railway
 
-# Recreate gtts stub (blocked by security policy - form-data@2.3.3)
+# Recreate gtts stub (gtts not in package.json; this stub handles TTS gracefully)
 if [ ! -f "node_modules/gtts/index.js" ]; then
   mkdir -p node_modules/gtts
   cat > node_modules/gtts/index.js << 'EOF'
@@ -49,22 +49,25 @@ EOF
   echo '{"name":"supports-color","version":"7.2.0","main":"index.js"}' > node_modules/supports-color/package.json
 fi
 
-# Rebuild sharp if native module is missing
+# Rebuild sharp native module if missing
 if [ ! -f "node_modules/sharp/build/Release/sharp-linux-x64.node" ]; then
+  echo "🔧 Rebuilding sharp..."
   npm rebuild sharp --ignore-scripts=false 2>/dev/null || true
 fi
 
-# Ensure express and multer are installed (required for dashboard)
-if [ ! -d "node_modules/express" ] || [ ! -d "node_modules/multer" ]; then
-  echo "📦 Installing dashboard dependencies..."
-  npm install express multer --legacy-peer-deps --silent 2>/dev/null || true
-fi
-
-# Ensure data files exist
+# Ensure data directory and required JSON files exist
+mkdir -p data
 [ ! -f "data/customCommands.json" ] && echo '[]' > data/customCommands.json
 [ ! -f "data/botInfo.json" ] && echo '{}' > data/botInfo.json
+[ ! -f "data/banned.json" ] && echo '[]' > data/banned.json
+[ ! -f "data/premium.json" ] && echo '[]' > data/premium.json
+[ ! -f "data/warnings.json" ] && echo '{}' > data/warnings.json
+[ ! -f "data/owner.json" ] && echo '["60162832841@s.whatsapp.net"]' > data/owner.json
 
-# Ensure public/uploads directory exists
+# Ensure session and uploads directories exist
+mkdir -p session
 mkdir -p public/uploads
+mkdir -p temp
+mkdir -p tmp
 
 exec node index.js
