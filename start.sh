@@ -2,6 +2,20 @@
 # Startup script for Knight Bot
 # Works on Replit and Railway
 
+# ── SESSION_ID: Load session from environment variable (for Railway/cloud) ──
+# Set SESSION_ID in Railway env vars with the base64 value from dashboard Session tab
+if [ -n "$SESSION_ID" ]; then
+  echo "📦 SESSION_ID detected — restoring session from environment variable..."
+  mkdir -p session
+  echo "$SESSION_ID" | base64 -d > session/creds.json 2>/dev/null
+  if [ $? -eq 0 ] && [ -s session/creds.json ]; then
+    echo "✅ Session restored from SESSION_ID successfully."
+  else
+    echo "⚠️ SESSION_ID decode failed — will generate fresh QR."
+    rm -f session/creds.json
+  fi
+fi
+
 # Recreate gtts stub (gtts not in package.json; this stub handles TTS gracefully)
 if [ ! -f "node_modules/gtts/index.js" ]; then
   mkdir -p node_modules/gtts

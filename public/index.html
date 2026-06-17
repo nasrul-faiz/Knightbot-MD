@@ -517,6 +517,35 @@
         </div>
       </div>
     </div>
+
+    <!-- Railway SESSION_ID Export -->
+    <div class="card" style="margin-top:16px">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        Deploy to Railway — SESSION_ID
+      </div>
+      <div style="font-size:13px;color:var(--text-dim);line-height:1.7;margin-bottom:16px">
+        Railway buang session files setiap kali deploy. Gunakan <b>SESSION_ID</b> supaya bot boleh connect tanpa scan QR semula.<br><br>
+        <b>Cara guna:</b><br>
+        1. Pastikan bot <b>Connected</b> di sini dulu<br>
+        2. Klik <b>Export SESSION_ID</b> di bawah<br>
+        3. Copy nilai yang keluar<br>
+        4. Pergi Railway → Service → <b>Variables</b> → tambah <code style="background:var(--surface2);padding:2px 6px;border-radius:4px">SESSION_ID</code> = nilai tadi<br>
+        5. Redeploy Railway — bot akan connect terus tanpa QR ✅
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button class="btn" onclick="exportSession()" id="exportBtn" style="background:var(--accent);color:#fff">
+          📦 Export SESSION_ID
+        </button>
+        <button class="btn btn-outline btn-sm" onclick="copySessionId()" id="copyBtn" style="display:none">
+          📋 Copy
+        </button>
+      </div>
+      <div id="sessionExportBox" style="display:none;margin-top:14px">
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:6px">SESSION_ID value (copy semua):</div>
+        <textarea id="sessionIdValue" readonly rows="4" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;font-family:monospace;font-size:11px;color:var(--text);resize:vertical;box-sizing:border-box"></textarea>
+      </div>
+    </div>
   </div>
 
   <!-- Confirm modal -->
@@ -784,6 +813,43 @@ function confirmReset() {
 
 function closeModal() {
   document.getElementById('confirmModal').style.display = 'none'
+}
+
+async function exportSession() {
+  const btn = document.getElementById('exportBtn')
+  btn.textContent = '⏳ Exporting...'
+  btn.disabled = true
+  try {
+    const res = await fetch('/api/session/export').then(r => r.json())
+    if (res.success) {
+      document.getElementById('sessionExportBox').style.display = ''
+      document.getElementById('sessionIdValue').value = res.sessionId
+      document.getElementById('copyBtn').style.display = ''
+      btn.textContent = '✅ Exported!'
+      showToast('SESSION_ID ready — copy and paste into Railway Variables', 'success')
+    } else {
+      showToast(res.error || 'Bot belum connected. Connect dulu.', 'error')
+      btn.textContent = '📦 Export SESSION_ID'
+      btn.disabled = false
+    }
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error')
+    btn.textContent = '📦 Export SESSION_ID'
+    btn.disabled = false
+  }
+}
+
+function copySessionId() {
+  const val = document.getElementById('sessionIdValue').value
+  navigator.clipboard.writeText(val).then(() => {
+    showToast('SESSION_ID copied!', 'success')
+    document.getElementById('copyBtn').textContent = '✅ Copied!'
+    setTimeout(() => { document.getElementById('copyBtn').textContent = '📋 Copy' }, 2000)
+  }).catch(() => {
+    document.getElementById('sessionIdValue').select()
+    document.execCommand('copy')
+    showToast('SESSION_ID copied!', 'success')
+  })
 }
 
 async function doReset() {

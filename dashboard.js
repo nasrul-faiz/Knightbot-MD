@@ -195,6 +195,21 @@ app.get('/api/session/qr', (req, res) => {
     res.json(qrState)
 })
 
+// ── API: Session export (base64 encode creds.json for Railway SESSION_ID) ────
+app.get('/api/session/export', (req, res) => {
+    try {
+        const credsPath = path.join(__dirname, 'session', 'creds.json')
+        if (!fs.existsSync(credsPath)) {
+            return res.status(404).json({ success: false, error: 'No active session. Connect bot first.' })
+        }
+        const creds = fs.readFileSync(credsPath)
+        const b64 = creds.toString('base64')
+        res.json({ success: true, sessionId: b64 })
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message })
+    }
+})
+
 // ── API: Session reset (delete session → bot will regenerate QR) ────────────
 app.post('/api/session/reset', (req, res) => {
     try {

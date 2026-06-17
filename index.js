@@ -75,7 +75,7 @@ setInterval(() => {
     }
 }, 30_000) // check every 30 seconds
 
-let phoneNumber = "911234567890"
+let phoneNumber = ""
 let owner = JSON.parse(fs.readFileSync('./data/owner.json'))
 
 // Conflict backoff tracker — persisted in file across process restarts
@@ -93,9 +93,9 @@ try {
 
 global.botname = "KNIGHT BOT"
 global.themeemoji = "•"
-// Auto-use owner number so bot never prompts for phone number on restart
 global.phoneNumber = settings.ownerNumber || phoneNumber
-const pairingCode = !!phoneNumber || process.argv.includes("--pairing-code")
+// Use QR mode by default (more stable). Pairing code only if --pairing-code flag passed.
+const pairingCode = process.argv.includes("--pairing-code")
 const useMobile = process.argv.includes("--mobile")
 
 // Only create readline interface if we're in an interactive environment
@@ -119,7 +119,7 @@ async function startXeonBotInc() {
         const XeonBotInc = makeWASocket({
             version,
             logger: pino({ level: 'silent' }),
-            printQRInTerminal: !pairingCode,
+            printQRInTerminal: false,
             browser: ["Ubuntu", "Chrome", "20.0.04"],
             auth: {
                 creds: state.creds,
