@@ -137,26 +137,23 @@
 
   /* Responsive */
   @media (max-width: 768px) {
-    .app { flex-direction: column; }
-    .sidebar { width: 100%; height: auto; position: sticky; top: 0; z-index: 100; flex-direction: row; align-items: center; gap: 8px; padding: 10px 12px; }
-    .brand { padding: 0 6px 0 2px; font-size: 18px; flex-shrink: 0; }
-    .brand .brandtext { display: none; }
-    .side-label { display: none; }
-    .side-nav { flex-direction: row; flex: 1; overflow-x: auto; gap: 6px; scrollbar-width: none; }
-    .side-nav::-webkit-scrollbar { display: none; }
-    .nav-item { white-space: nowrap; padding: 9px 13px; width: auto; }
-    .nav-item .nav-label { display: none; }
-    .nav-item.active .nav-label { display: inline; }
-    .side-status { display: none; }
+    .sidebar { position: fixed; left: 0; top: 0; z-index: 200; height: 100vh; box-shadow: none; }
+    .sidebar:not(.collapsed) { box-shadow: 4px 0 32px rgba(0,0,0,.6); }
+    .main { margin-left: 60px; }
+    .sidebar-overlay { display: block; }
   }
   @media (max-width: 600px) {
     .status-card { flex-direction: column; text-align: center; }
     .status-meta { justify-content: center; }
   }
+  /* Mobile dim overlay behind open sidebar */
+  .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 199; }
+  .sidebar-overlay.active { display: block; }
 </style>
 </head>
 <body>
 
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebarMobile()"></div>
 <div class="app">
   <aside class="sidebar" id="sidebar">
     <div class="brand">
@@ -696,15 +693,33 @@ function escapeHtml(s) {
 }
 
 // ── Sidebar toggle ────────────────────────────────────────────────────────────
+function isMobile() { return window.innerWidth <= 768 }
+
 function toggleSidebar() {
   const sidebar = document.getElementById('sidebar')
+  const overlay = document.getElementById('sidebarOverlay')
   const collapsed = sidebar.classList.toggle('collapsed')
-  localStorage.setItem('sidebarCollapsed', collapsed ? '1' : '0')
+  if (isMobile()) {
+    overlay.classList.toggle('active', !collapsed)
+  } else {
+    localStorage.setItem('sidebarCollapsed', collapsed ? '1' : '0')
+  }
 }
+
+function closeSidebarMobile() {
+  const sidebar = document.getElementById('sidebar')
+  const overlay = document.getElementById('sidebarOverlay')
+  sidebar.classList.add('collapsed')
+  overlay.classList.remove('active')
+}
+
 ;(function() {
-  if (localStorage.getItem('sidebarCollapsed') === '1') {
-    const sidebar = document.getElementById('sidebar')
-    if (sidebar) sidebar.classList.add('collapsed')
+  const sidebar = document.getElementById('sidebar')
+  if (!sidebar) return
+  if (isMobile()) {
+    sidebar.classList.add('collapsed')
+  } else if (localStorage.getItem('sidebarCollapsed') === '1') {
+    sidebar.classList.add('collapsed')
   }
 })()
 
