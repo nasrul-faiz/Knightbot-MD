@@ -185,7 +185,6 @@
   </div>
 
   <!-- Stats row -->
-  <div class="grid grid-4" style="margin-bottom:16px" id="statsGrid"></div>
 
   <!-- Settings Tab -->
   <div id="tab-settings">
@@ -606,14 +605,6 @@ async function loadStatus() {
       <span class="badge badge-yellow">${data.commandMode === 'public' ? '🌐 Public' : '🔒 Private'}</span>
     `
 
-    const stats = data.stats
-    const statsGrid = document.getElementById('statsGrid')
-    statsGrid.innerHTML = `
-      <div class="stat-card"><div class="stat-icon">🚫</div><div class="stat-value">${stats.banned}</div><div class="stat-label">Banned Users</div></div>
-      <div class="stat-card"><div class="stat-icon">⭐</div><div class="stat-value">${stats.premium}</div><div class="stat-label">Premium Users</div></div>
-      <div class="stat-card"><div class="stat-icon">⚠️</div><div class="stat-value">${stats.warnings}</div><div class="stat-label">Warnings Issued</div></div>
-      <div class="stat-card"><div class="stat-icon">💬</div><div class="stat-value">${stats.messages}</div><div class="stat-label">Messages Handled</div></div>
-    `
   } catch(e) {
     document.getElementById('navStatusText').textContent = 'Error'
   }
