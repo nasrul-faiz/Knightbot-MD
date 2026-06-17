@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Knight Bot Dashboard 🤖💚</title>
+<title>Ilussion Bot Dashboard 🤖💚</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -30,20 +30,10 @@
 
   /* App shell + sidebar */
   .app { display: flex; min-height: 100vh; }
-  .sidebar { width: 248px; flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--border); padding: 16px 12px; display: flex; flex-direction: column; gap: 2px; position: sticky; top: 0; height: 100vh; transition: width .2s ease; overflow: hidden; }
-  .sidebar.collapsed { width: 60px; }
+  .sidebar { width: 248px; flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--border); padding: 16px 12px; display: flex; flex-direction: column; gap: 2px; position: fixed; left: 0; top: 0; height: 100vh; z-index: 200; transform: translateX(-260px); transition: transform .25s ease; overflow: hidden; }
+  .sidebar.open { transform: translateX(0); box-shadow: 4px 0 32px rgba(0,0,0,.6); }
   .brand { display: flex; align-items: center; gap: 10px; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 14px; color: var(--text); padding: 6px 6px 14px; }
-  .brand svg { width: 32px; height: 32px; padding: 6px; box-sizing: border-box; color: var(--green); background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; flex-shrink: 0; }
-  .sidebar-toggle { margin-left: auto; background: none; border: none; color: var(--text-dim); cursor: pointer; padding: 4px 6px; border-radius: 6px; font-size: 16px; line-height: 1; transition: background .12s, color .12s; flex-shrink: 0; }
-  .sidebar-toggle:hover { background: var(--surface2); color: var(--text); }
-  .sidebar.collapsed .brandtext,
-  .sidebar.collapsed .side-label,
-  .sidebar.collapsed .nav-label,
-  .sidebar.collapsed .side-status-text { display: none; }
-  .sidebar.collapsed .sidebar-toggle { margin-left: 0; }
-  .sidebar.collapsed .brand { justify-content: center; gap: 0; }
-  .sidebar.collapsed .nav-item { justify-content: center; padding: 10px 0; gap: 0; }
-  .sidebar.collapsed .side-status { justify-content: center; }
+  .brand-icon { width: 32px; height: 32px; padding: 6px; box-sizing: border-box; color: var(--green); background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; flex-shrink: 0; cursor: pointer; }
   .side-label { font-size: 11px; font-weight: 500; color: var(--text-dim); padding: 8px 10px 6px; letter-spacing: .02em; white-space: nowrap; }
   .side-nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
   .nav-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; border: none; background: none; color: var(--text-dim); cursor: pointer; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 500; text-align: left; width: 100%; transition: background .12s, color .12s; white-space: nowrap; }
@@ -53,7 +43,11 @@
   .side-status { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; color: var(--text-dim); padding: 10px; border-top: 1px solid var(--border); margin-top: 4px; }
   .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--red); animation: none; flex-shrink: 0; }
   .dot.online { background: var(--green); animation: pulse 2s infinite; }
-  .main { flex: 1; min-width: 0; overflow-x: hidden; }
+  .main { flex: 1; min-width: 0; overflow-x: hidden; width: 100%; }
+  /* FAB to open sidebar */
+  .menu-fab { position: fixed; top: 16px; left: 16px; z-index: 100; width: 40px; height: 40px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background .15s, border-color .15s; box-shadow: 0 2px 8px rgba(0,0,0,.4); }
+  .menu-fab:hover { background: var(--surface2); border-color: var(--green); }
+  .menu-fab svg { width: 22px; height: 22px; color: var(--green); }
 
   /* Layout */
   .container { max-width: 1100px; margin: 0 auto; padding: 28px 22px 44px; }
@@ -135,31 +129,27 @@
   .toast.success { border-color: var(--green); }
   .toast.error { border-color: var(--red); }
 
-  /* Responsive */
-  @media (max-width: 768px) {
-    .sidebar { position: fixed; left: 0; top: 0; z-index: 200; height: 100vh; box-shadow: none; }
-    .sidebar:not(.collapsed) { box-shadow: 4px 0 32px rgba(0,0,0,.6); }
-    .main { margin-left: 60px; }
-    .sidebar-overlay { display: block; }
-  }
   @media (max-width: 600px) {
     .status-card { flex-direction: column; text-align: center; }
     .status-meta { justify-content: center; }
   }
-  /* Mobile dim overlay behind open sidebar */
+  /* Dim overlay behind open sidebar */
   .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 199; }
   .sidebar-overlay.active { display: block; }
 </style>
 </head>
 <body>
 
-<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebarMobile()"></div>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+<!-- FAB: click WhatsApp icon to open sidebar -->
+<button class="menu-fab" onclick="openSidebar()" id="menuFab" title="Open menu">
+  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+</button>
 <div class="app">
   <aside class="sidebar" id="sidebar">
     <div class="brand">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-      <span class="brandtext">Knight Bot</span>
-      <button class="sidebar-toggle" onclick="toggleSidebar()" id="sidebarToggle" title="Toggle sidebar">☰</button>
+      <svg class="brand-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      <span class="brandtext">Ilussion Bot</span>
     </div>
     <div class="side-label">Menu</div>
     <nav class="side-nav">
@@ -206,7 +196,7 @@
         </div>
         <div class="form-group">
           <label>Bot Name</label>
-          <input type="text" id="botName" placeholder="Knight Bot" />
+          <input type="text" id="botName" placeholder="Ilussion Bot" />
         </div>
         <div class="form-group">
           <label>Bot Owner Name</label>
@@ -214,7 +204,7 @@
         </div>
         <div class="form-group">
           <label>Pack Name (Stickers)</label>
-          <input type="text" id="packname" placeholder="Knight Bot" />
+          <input type="text" id="packname" placeholder="Ilussion Bot" />
         </div>
         <div class="form-group">
           <label>Description</label>
@@ -583,7 +573,7 @@ function showTab(name, btn) {
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'))
   document.getElementById('tab-' + name).style.display = ''
   btn.classList.add('active')
-  btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+  closeSidebar()
   if (name === 'logs') loadLogs()
   if (name === 'banned') loadBanned()
   if (name === 'features') loadFeatures()
@@ -619,7 +609,7 @@ async function loadStatus() {
       emoji.style.display = ''
     }
 
-    document.getElementById('statusName').textContent = data.account?.name || data.botName || 'Knight Bot'
+    document.getElementById('statusName').textContent = data.account?.name || data.botName || 'Ilussion Bot'
     document.getElementById('statusNumber').textContent = data.account?.id?.split(':')[0] || 'Not connected'
     document.getElementById('statusUptime').textContent = formatUptime(data.uptime)
 
@@ -692,36 +682,18 @@ function escapeHtml(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
 }
 
-// ── Sidebar toggle ────────────────────────────────────────────────────────────
-function isMobile() { return window.innerWidth <= 768 }
-
-function toggleSidebar() {
-  const sidebar = document.getElementById('sidebar')
-  const overlay = document.getElementById('sidebarOverlay')
-  const collapsed = sidebar.classList.toggle('collapsed')
-  if (isMobile()) {
-    overlay.classList.toggle('active', !collapsed)
-  } else {
-    localStorage.setItem('sidebarCollapsed', collapsed ? '1' : '0')
-  }
+// ── Sidebar drawer ────────────────────────────────────────────────────────────
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('open')
+  document.getElementById('sidebarOverlay').classList.add('active')
+  document.getElementById('menuFab').style.display = 'none'
 }
 
-function closeSidebarMobile() {
-  const sidebar = document.getElementById('sidebar')
-  const overlay = document.getElementById('sidebarOverlay')
-  sidebar.classList.add('collapsed')
-  overlay.classList.remove('active')
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open')
+  document.getElementById('sidebarOverlay').classList.remove('active')
+  document.getElementById('menuFab').style.display = ''
 }
-
-;(function() {
-  const sidebar = document.getElementById('sidebar')
-  if (!sidebar) return
-  if (isMobile()) {
-    sidebar.classList.add('collapsed')
-  } else if (localStorage.getItem('sidebarCollapsed') === '1') {
-    sidebar.classList.add('collapsed')
-  }
-})()
 
 // ── Groups ────────────────────────────────────────────────────────────────────
 async function loadGroups() {
