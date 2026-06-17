@@ -442,18 +442,20 @@
   <!-- Session Tab -->
   <div id="tab-session" style="display:none">
     <div class="grid grid-2">
+
       <!-- QR Panel -->
       <div class="card" style="display:flex;flex-direction:column;align-items:center;gap:16px">
         <div class="card-title" style="width:100%">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zm3 3h4v4h-4zm-3 3h3"/></svg>
-          QR Code
+          WhatsApp Connection
         </div>
 
         <!-- Connected state -->
-        <div id="qrConnected" style="display:none;text-align:center;padding:20px">
-          <div style="font-size:56px;margin-bottom:12px">✅</div>
-          <div style="font-weight:700;font-size:18px;color:var(--green)">Bot Connected</div>
-          <div style="font-size:13px;color:var(--text-dim);margin-top:6px">Your WhatsApp session is active and working.</div>
+        <div id="qrConnected" style="display:none;text-align:center;padding:10px 0;width:100%">
+          <div style="font-size:52px;margin-bottom:10px">✅</div>
+          <div style="font-weight:700;font-size:17px;color:var(--green)">Bot Connected</div>
+          <div style="font-size:13px;color:var(--text-dim);margin-top:4px">WhatsApp session active</div>
+          <div id="qrConnectedAccount" style="margin-top:14px;padding:12px;background:var(--surface2);border-radius:8px;font-size:13px;text-align:left;line-height:1.8"></div>
         </div>
 
         <!-- QR waiting state -->
@@ -481,43 +483,32 @@
         <button class="btn btn-outline btn-sm" onclick="loadSession()" style="margin-top:4px">↻ Refresh</button>
       </div>
 
-      <!-- Danger Zone Panel -->
+      <!-- Session Management Panel -->
       <div class="card">
         <div class="card-title">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
           Session Management
         </div>
 
-        <div style="margin-bottom:24px">
-          <div style="font-size:14px;font-weight:600;margin-bottom:6px">Current Session</div>
-          <div style="font-size:13px;color:var(--text-dim);line-height:1.6">
-            Your bot is linked to a WhatsApp account via a saved session. The session is stored securely on the server.
-          </div>
-          <div id="sessionAccountInfo" style="margin-top:10px;padding:12px;background:var(--surface2);border-radius:8px;font-size:13px"></div>
+        <!-- Live info grid -->
+        <div id="sessionInfoGrid" style="margin-bottom:20px;display:flex;flex-direction:column;gap:0">
+          <!-- populated by JS -->
+          <div style="font-size:13px;color:var(--text-dim);padding:8px 0">Loading session info...</div>
         </div>
 
+        <!-- Danger zone -->
         <div style="border-top:1px solid var(--border);padding-top:20px">
           <div style="font-size:14px;font-weight:600;color:var(--red);margin-bottom:6px">⚠️ Re-link to New Number</div>
-          <div style="font-size:13px;color:var(--text-dim);line-height:1.6;margin-bottom:16px">
-            This will <strong>delete the current session</strong> and restart the bot. You'll need to scan a new QR code to link a different WhatsApp number.
+          <div style="font-size:13px;color:var(--text-dim);line-height:1.6;margin-bottom:14px">
+            Padam session semasa dan tunjuk QR baru untuk link nombor lain.
           </div>
           <button class="btn btn-sm" style="background:rgba(248,81,73,.15);color:var(--red);border:1px solid var(--red);width:100%" onclick="confirmReset()">
             🔓 Clear Session &amp; Show QR
           </button>
         </div>
-
-        <div style="border-top:1px solid var(--border);padding-top:20px;margin-top:20px">
-          <div style="font-size:13px;color:var(--text-dim);line-height:1.6">
-            <b>How to re-link:</b><br>
-            1. Click "Clear Session" above<br>
-            2. Wait ~10 seconds for QR to appear<br>
-            3. Scan with WhatsApp on your phone<br>
-            4. Bot reconnects automatically ✅
-          </div>
-        </div>
       </div>
-    </div>
 
+    </div>
   </div>
 
   <!-- Confirm modal -->
@@ -731,43 +722,114 @@ async function loadBanned() {
 // ── Session ───────────────────────────────────────────────────────────────────
 let qrPollTimer = null
 
+function fmtAge(ms) {
+  if (!ms) return '—'
+  const s = Math.floor((Date.now() - ms) / 1000)
+  if (s < 60) return `${s}s ago`
+  if (s < 3600) return `${Math.floor(s/60)}m ago`
+  if (s < 86400) return `${Math.floor(s/3600)}h ${Math.floor((s%3600)/60)}m ago`
+  return `${Math.floor(s/86400)}d ago`
+}
+
+function fmtUptime(s) {
+  s = Math.floor(s)
+  if (s < 60) return `${s}s`
+  if (s < 3600) return `${Math.floor(s/60)}m ${s%60}s`
+  return `${Math.floor(s/3600)}h ${Math.floor((s%3600)/60)}m`
+}
+
+function infoRow(label, value, valueColor) {
+  return `<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)">
+    <span style="font-size:12px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px">${label}</span>
+    <span style="font-size:13px;font-weight:600;color:${valueColor||'var(--text)'}">${value}</span>
+  </div>`
+}
+
 async function loadSession() {
   try {
-    const data = await fetch('/api/session/qr').then(r => r.json())
-    const connected = document.getElementById('qrConnected')
-    const waiting   = document.getElementById('qrWaiting')
-    const imgWrap   = document.getElementById('qrImageWrap')
-    const def       = document.getElementById('qrDefault')
+    const [qrData, status] = await Promise.all([
+      fetch('/api/session/qr').then(r => r.json()),
+      fetch('/api/status').then(r => r.json())
+    ])
 
-    ;[connected, waiting, imgWrap, def].forEach(el => el.style.display = 'none')
+    // ── QR Panel ──────────────────────────────────────────────────────────────
+    const elConn    = document.getElementById('qrConnected')
+    const elWait    = document.getElementById('qrWaiting')
+    const elImgWrap = document.getElementById('qrImageWrap')
+    const elDef     = document.getElementById('qrDefault')
 
-    if (data.status === 'connected') {
-      connected.style.display = ''
+    ;[elConn, elWait, elImgWrap, elDef].forEach(el => el.style.display = 'none')
+
+    if (qrData.status === 'connected' || status.connected) {
+      elConn.style.display = ''
       stopQrPoll()
-    } else if (data.status === 'pending' && data.qr) {
-      imgWrap.style.display = ''
-      document.getElementById('qrImage').src = data.qr
-      const age = Math.floor((Date.now() - data.timestamp) / 1000)
+      // Populate connected account box
+      const acct = document.getElementById('qrConnectedAccount')
+      if (status.account) {
+        const num = status.account.id?.split(':')[0] || ''
+        acct.innerHTML =
+          `<div><b>📱 ${status.account.name || 'Unknown'}</b></div>` +
+          `<div style="color:var(--text-dim)">+${num}</div>` +
+          `<div style="margin-top:4px;font-size:12px;color:var(--text-dim)">Uptime: ${fmtUptime(status.uptime)}</div>`
+      } else {
+        acct.innerHTML = `<span style="color:var(--text-dim);font-size:12px">Account info loading...</span>`
+      }
+    } else if (qrData.status === 'pending' && qrData.qr) {
+      elImgWrap.style.display = ''
+      document.getElementById('qrImage').src = qrData.qr
+      const age  = Math.floor((Date.now() - qrData.timestamp) / 1000)
       const left = Math.max(0, 60 - age)
-      document.getElementById('qrExpiry').textContent = left > 0 ? `⏱ Expires in ~${left}s` : '⚠️ QR may have expired. Click Refresh.'
+      document.getElementById('qrExpiry').textContent = left > 0
+        ? `⏱ Expires in ~${left}s` : '⚠️ QR may have expired. Click Refresh.'
       startQrPoll()
-    } else if (data.status === 'resetting') {
-      waiting.style.display = ''
+    } else if (qrData.status === 'resetting') {
+      elWait.style.display = ''
       startQrPoll()
     } else {
-      def.style.display = ''
+      elDef.style.display = ''
+      startQrPoll()
     }
 
-    // Account info panel
-    const creds = await fetch('/api/status').then(r => r.json())
-    const info = document.getElementById('sessionAccountInfo')
-    if (creds.connected && creds.account) {
-      const num = creds.account.id?.split(':')[0] || ''
-      info.innerHTML = `<span style="color:var(--green)">●</span> <b>${creds.account.name || 'Unknown'}</b> &nbsp;·&nbsp; +${num}`
-    } else {
-      info.innerHTML = `<span style="color:var(--red)">●</span> No active session`
+    // ── Session Info Grid ─────────────────────────────────────────────────────
+    const grid = document.getElementById('sessionInfoGrid')
+    const connStatus = (status.connected || qrData.status === 'connected')
+    const statusBadge = connStatus
+      ? `<span style="color:var(--green)">● Connected</span>`
+      : `<span style="color:var(--red)">● Disconnected</span>`
+
+    const platformBadge = status.platform === 'Railway'
+      ? `<span style="color:#c792ea">🚂 Railway</span>`
+      : status.platform === 'Replit'
+        ? `<span style="color:#56b6c2">♟ Replit</span>`
+        : `<span style="color:var(--text-dim)">💻 Local</span>`
+
+    const sessionEnvBadge = status.hasSessionEnv
+      ? `<span style="color:var(--green)">✓ Set</span>`
+      : `<span style="color:var(--text-dim)">— Not set</span>`
+
+    let num = '—', name = '—'
+    if (status.account) {
+      num  = '+' + (status.account.id?.split(':')[0] || '—')
+      name = status.account.name || '—'
     }
-  } catch(e) {}
+
+    grid.innerHTML =
+      infoRow('Status', statusBadge) +
+      infoRow('Phone Number', num, 'var(--text)') +
+      infoRow('Account Name', name, 'var(--text)') +
+      infoRow('Platform', platformBadge) +
+      infoRow('SESSION_ID Env', sessionEnvBadge) +
+      infoRow('Session Updated', fmtAge(status.sessionMtime), 'var(--text-dim)') +
+      infoRow('Bot Uptime', fmtUptime(status.uptime), 'var(--text-dim)') +
+      `<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0">
+        <span style="font-size:12px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px">Version</span>
+        <span style="font-size:13px;font-weight:600;color:var(--text-dim)">v${status.version}</span>
+      </div>`
+
+  } catch(e) {
+    document.getElementById('sessionInfoGrid').innerHTML =
+      `<div style="font-size:13px;color:var(--red);padding:8px 0">⚠️ Failed to load session info</div>`
+  }
 }
 
 function startQrPoll() {

@@ -79,6 +79,7 @@ app.get('/api/status', (req, res) => {
     const premium = readJSON('./data/premium.json', [])
     const warnings = readJSON('./data/warnings.json', {})
     const messageCount = readJSON('./data/messageCount.json', {})
+    const qrState = readJSON('./data/qrState.json', {})
 
     const connected = !!(creds && creds.me && creds.registered)
     const account = creds?.me || null
@@ -86,6 +87,18 @@ app.get('/api/status', (req, res) => {
 
     const totalMessages = Object.values(messageCount).reduce((a, b) => a + (typeof b === 'number' ? b : 0), 0)
     const warningCount = Object.keys(warnings).length
+
+    // Session file age
+    let sessionMtime = null
+    try {
+        const credsPath = path.join(__dirname, 'session', 'creds.json')
+        if (fs.existsSync(credsPath)) sessionMtime = fs.statSync(credsPath).mtimeMs
+    } catch (_) {}
+
+    // Platform detection
+    let platform = 'Local'
+    if (process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID) platform = 'Railway'
+    else if (process.env.REPL_ID || process.env.REPLIT_DB_URL) platform = 'Replit'
 
     res.json({
         connected,
@@ -96,6 +109,10 @@ app.get('/api/status', (req, res) => {
         botName: settings.botName || 'Knight Bot',
         commandMode: settings.commandMode || 'public',
         ownerNumber: settings.ownerNumber || '',
+        sessionMtime,
+        hasSessionEnv: !!process.env.SESSION_ID,
+        platform,
+        qrStatus: qrState.status || 'unknown',
         stats: {
             banned: Array.isArray(banned) ? banned.length : Object.keys(banned).length,
             premium: Array.isArray(premium) ? premium.length : Object.keys(premium).length,
