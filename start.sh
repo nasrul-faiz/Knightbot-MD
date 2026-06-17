@@ -16,10 +16,9 @@ if [ -n "$SESSION_ID" ]; then
   fi
 fi
 
-# Recreate gtts stub (gtts not in package.json; this stub handles TTS gracefully)
-if [ ! -f "node_modules/gtts/index.js" ]; then
-  mkdir -p node_modules/gtts
-  cat > node_modules/gtts/index.js << 'EOF'
+# Always recreate gtts stub (gtts not in package.json; this stub handles TTS gracefully)
+mkdir -p node_modules/gtts
+cat > node_modules/gtts/index.js << 'EOF'
 'use strict';
 class gTTS {
   constructor(text, lang) { this.text = text; this.lang = lang || 'en'; }
@@ -28,7 +27,12 @@ class gTTS {
 }
 module.exports = gTTS;
 EOF
-  echo '{"name":"gtts","version":"0.2.1","main":"index.js"}' > node_modules/gtts/package.json
+echo '{"name":"gtts","version":"0.2.1","main":"index.js"}' > node_modules/gtts/package.json
+
+# Cheerio compatibility shim: newer cheerio ships dist/ not lib/, but older bundled deps require lib/index.js
+if [ -f "node_modules/cheerio/dist/commonjs/index.js" ]; then
+  mkdir -p node_modules/cheerio/lib
+  echo "module.exports = require('../dist/commonjs/index.js');" > node_modules/cheerio/lib/index.js
 fi
 
 # Always overwrite supports-color stub to avoid has-flag dependency issue
