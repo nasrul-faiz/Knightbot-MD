@@ -199,6 +199,34 @@ app.get('/api/features', (req, res) => {
     })
 })
 
+// ── API: Groups ──────────────────────────────────────────────────────────────
+app.get('/api/groups', (req, res) => {
+    try {
+        const store = readJSON('./baileys_store.json', { chats: {}, contacts: {} })
+        const ugd = readJSON('./data/userGroupData.json', { antilink: {}, antibadword: {} })
+        const chats = store.chats || {}
+        const contacts = store.contacts || {}
+        const antilink = ugd.antilink || {}
+        const antibadword = ugd.antibadword || {}
+
+        const groups = Object.entries(chats)
+            .filter(([jid]) => jid.endsWith('@g.us'))
+            .map(([jid, chat]) => {
+                const contact = contacts[jid] || {}
+                return {
+                    jid,
+                    name: contact.name || contact.subject || chat.name || jid.replace('@g.us', ''),
+                    antilink: !!(antilink[jid]),
+                    antibadword: !!(antibadword[jid]),
+                }
+            })
+
+        res.json({ groups, total: groups.length })
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message })
+    }
+})
+
 // ── API: Features toggle ─────────────────────────────────────────────────────
 app.post('/api/features/toggle', (req, res) => {
     const featureMap = {
