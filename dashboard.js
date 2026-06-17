@@ -199,6 +199,26 @@ app.get('/api/features', (req, res) => {
     })
 })
 
+// ── API: Features toggle ─────────────────────────────────────────────────────
+app.post('/api/features/toggle', (req, res) => {
+    const featureMap = {
+        autoStatus: './data/autoStatus.json',
+        autoRead:   './data/autoread.json',
+        autoTyping: './data/autotyping.json',
+        antiDelete: './data/antidelete.json',
+    }
+    const { key, enabled } = req.body
+    if (!featureMap[key]) return res.status(400).json({ success: false, error: 'Unknown feature key.' })
+    try {
+        const current = readJSON(featureMap[key], { enabled: false })
+        current.enabled = !!enabled
+        fs.writeFileSync(featureMap[key], JSON.stringify(current, null, 2))
+        res.json({ success: true, key, enabled: current.enabled })
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message })
+    }
+})
+
 // ── API: Banned users ───────────────────────────────────────────────────────
 app.get('/api/banned', (req, res) => {
     const banned = readJSON('./data/banned.json', [])

@@ -672,24 +672,45 @@ async function loadFeatures() {
   try {
     const f = await fetch('/api/features').then(r => r.json())
     const features = [
-      { key: 'autoStatus', label: 'Auto Status View', desc: 'Automatically view WhatsApp statuses', cmd: '.autostatus on/off' },
-      { key: 'autoRead', label: 'Auto Read', desc: 'Automatically mark messages as read', cmd: '.autoread on/off' },
-      { key: 'autoTyping', label: 'Auto Typing', desc: 'Show typing indicator while processing', cmd: '.autotyping on/off' },
-      { key: 'antiDelete', label: 'Anti Delete', desc: 'Recover deleted messages in groups', cmd: '.antidelete on/off' },
+      { key: 'autoStatus', label: 'Auto Status View', desc: 'Automatically view WhatsApp statuses' },
+      { key: 'autoRead', label: 'Auto Read', desc: 'Automatically mark messages as read' },
+      { key: 'autoTyping', label: 'Auto Typing', desc: 'Show typing indicator while processing' },
+      { key: 'antiDelete', label: 'Anti Delete', desc: 'Recover deleted messages in groups' },
     ]
     document.getElementById('featuresContent').innerHTML = features.map(feat => `
       <div class="toggle-row">
         <div class="toggle-info">
           <div>${feat.label}</div>
-          <small>${feat.desc} · <code style="background:var(--surface2);padding:1px 5px;border-radius:3px;font-size:11px">${feat.cmd}</code></small>
+          <small style="color:var(--text-dim)">${feat.desc}</small>
         </div>
         <label class="toggle">
-          <input type="checkbox" ${f[feat.key] ? 'checked' : ''} disabled title="Use WhatsApp command to toggle">
+          <input type="checkbox" id="toggle-${feat.key}" ${f[feat.key] ? 'checked' : ''} onchange="toggleFeature('${feat.key}', this.checked)">
           <span class="slider"></span>
         </label>
       </div>
     `).join('')
   } catch(e) {}
+}
+
+async function toggleFeature(key, enabled) {
+  const checkbox = document.getElementById('toggle-' + key)
+  if (checkbox) checkbox.disabled = true
+  try {
+    const res = await fetch('/api/features/toggle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key, enabled })
+    }).then(r => r.json())
+    if (!res.success) {
+      alert('Failed to toggle feature: ' + (res.error || 'Unknown error'))
+      if (checkbox) checkbox.checked = !enabled
+    }
+  } catch(e) {
+    alert('Error toggling feature.')
+    if (checkbox) checkbox.checked = !enabled
+  } finally {
+    if (checkbox) checkbox.disabled = false
+  }
 }
 
 // ── Banned ────────────────────────────────────────────────────────────────────
