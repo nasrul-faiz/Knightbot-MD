@@ -700,9 +700,8 @@ async function loadGroups() {
   const el = document.getElementById('groupsContent')
   el.innerHTML = '<p style="color:var(--text-dim);font-size:13px">Loading...</p>'
   try {
-    const data = await fetch('/api/groups').then(r => r.json())
-    const groups = data.groups || []
-    if (!groups.length) {
+    const groups = await fetch('/api/groups').then(r => r.json())
+    if (!groups || !groups.length) {
       el.innerHTML = `
         <div style="text-align:center;padding:32px 0;color:var(--text-dim)">
           <div style="font-size:40px;margin-bottom:12px">👥</div>
@@ -715,14 +714,13 @@ async function loadGroups() {
       <p style="font-size:13px;color:var(--text-dim);margin-bottom:14px">${groups.length} group${groups.length !== 1 ? 's' : ''} joined</p>
       <div style="display:flex;flex-direction:column;gap:8px">
         ${groups.map(g => `
-          <div style="background:var(--surface2);border-radius:8px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px">
-            <div style="min-width:0">
-              <div style="font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(g.name)}</div>
-              <div style="font-size:11px;color:var(--text-dim);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${g.jid}</div>
+          <div style="background:var(--surface2);border-radius:8px;padding:12px 14px;border:1px solid var(--border)">
+            <div style="font-weight:600;font-size:14px;color:var(--text);margin-bottom:6px">👥 ${escapeHtml(g.name)}</div>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--text-dim)">
+              <span>💬 ${g.messages} messages</span>
+              <span>👤 ${g.members} members</span>
+              <span>${g.admin ? '👑 Admin' : '👶 Member'}</span>
             </div>
-            <div style="display:flex;gap:6px;flex-shrink:0">
-              ${g.antilink ? '<span class="badge badge-red" style="font-size:11px">🔗 Anti-link</span>' : ''}
-              ${g.antibadword ? '<span class="badge badge-yellow" style="font-size:11px">🤬 Anti-badword</span>' : ''}
             </div>
           </div>`).join('')}
       </div>`
