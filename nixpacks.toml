@@ -1,8 +1,11 @@
 [phases.setup]
-nixPkgs = ["nodejs_20", "ffmpeg"]
+nixPkgs = ["nodejs_20", "ffmpeg", "python3", "gnumake", "gcc"]
 
 [phases.install]
-cmds = ["npm install --legacy-peer-deps"]
+cmds = [
+  "npm install --legacy-peer-deps --ignore-scripts",
+  "npm rebuild sharp --ignore-scripts=false || true"
+]
 
 [start]
 cmd = "bash start.sh"
