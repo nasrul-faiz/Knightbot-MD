@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ["nodejs_20", "ffmpeg", "python3", "gnumake", "gcc", "vips", "pkg-config"]
+nixPkgs = ["nodejs_20", "ffmpeg", "python3", "gnumake", "gcc"]
 
 [phases.install]
 cmds = [
