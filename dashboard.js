@@ -372,6 +372,173 @@ app.delete('/api/custom-commands/:trigger', (req, res) => {
     }
 })
 
+// ── API: Analytics ─────────────────────────────────────────────────────────────
+app.get('/api/analytics', (req, res) => {
+    try {
+        const messageCount = readJSON('./data/messageCount.json', {})
+        const userGroupData = readJSON('./data/userGroupData.json', {})
+        const premium = readJSON('./data/premium.json', [])
+        const warnings = readJSON('./data/warnings.json', {})
+        
+        // Calculate top users by message count
+        const topUsers = Object.entries(messageCount)
+            .map(([id, count]) => ({ id, count: typeof count === 'number' ? count : 0 }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 10)
+        
+        // Get group stats
+        const groups = Object.entries(userGroupData)
+            .filter(([id]) => id.endsWith('@g.us'))
+            .map(([id, data]) => ({
+                id,
+                name: data.groupName || 'Unknown',
+                members: data.members ? Object.keys(data.members).length : 0,
+                messages: messageCount[id] || 0
+            }))
+            .sort((a, b) => b.messages - a.messages)
+            .slice(0, 10)
+        
+        const premiumCount = Array.isArray(premium) ? premium.length : Object.keys(premium).length
+        const totalMessages = Object.values(messageCount).reduce((a, b) => a + (typeof b === 'number' ? b : 0), 0)
+        
+        res.json({
+            totalMessages,
+            premiumUsers: premiumCount,
+            totalWarnings: Object.keys(warnings).length,
+            topUsers,
+            topGroups: groups,
+            stats: {
+                avgMessagesPerUser: topUsers.length > 0 ? Math.round(totalMessages / topUsers.length) : 0,
+                activeGroups: groups.length
+            }
+        })
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message })
+    }
+})
+
+// ── API: Premium Users ──────────────────────────────────────────────────────────
+app.get('/api/premium-users', (req, res) => {
+    try {
+        const premium = readJSON('./data/premium.json', [])
+        const userData = readJSON('./data/userGroupData.json', {})
+        
+        const users = (Array.isArray(premium) ? premium : Object.keys(premium)).map(id => ({
+            id,
+            addedDate: userData[id]?.premiumDate || null,
+            name: userData[id]?.name || 'Unknown'
+        }))
+        
+        res.json(users)
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message })
+    }
+})
+
+// ── API: Premium Users POST (add/remove) ────────────────────────────────────────
+app.post('/api/premium-users', (req, res) => {
+    try {
+        const { action, userId } = req.body
+        if (!action || !userId) return res.status(400).json({ success: false, error: 'Action and userId required.' })
+        
+        let premium = readJSON('./data/premium.json', [])
+        let userData = readJSON('./data/userGroupData.json', {})
+        
+        if (action === 'add') {
+            if (!Array.isArray(premium)) premium = Object.keys(premium)
+            if (!premium.includes(userId)) {
+                premium.push(userId)
+                userData[userId] = { ...userData[userId], premiumDate: new Date().toISOString() }
+            } else {
+                return res.status(409).json({ success: false, error: 'User already premium.' })
+            }
+        } else if (action === 'remove') {
+            if (Array.isArray(premium)) {
+                premium = premium.filter(id => id !== userId)
+            } else {
+                delete premium[userId]
+            }
+        } else {
+            return res.status(400).json({ success: false, error: 'Invalid action.' })
+        }
+        
+        fs.writeFileSync('./data/premium.json', JSON.stringify(premium, null, 2))
+        fs.writeFileSync('./data/userGroupData.json', JSON.stringify(userData, null, 2))
+        res.json({ success: true, message: `User ${action === 'add' ? 'added to' : 'removed from'} premium.` })
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message })
+    }
+})
+
+// ── API: Groups Info ────────────────────────────────────────────────────────────
+app.get('/api/groups', (req, res) => {
+    try {
+        const userGroupData = readJSON('./data/userGroupData.json', {})
+        const messageCount = readJSON('./data/messageCount.json', {})
+        
+        const groups = Object.entries(userGroupData)
+            .filter(([id]) => id.endsWith('@g.us'))
+            .map(([id, data]) => ({
+                id,
+                name: data.groupName || 'Unknown',
+                members: data.members ? Object.keys(data.members).length : 0,
+                messages: messageCount[id] || 0,
+                admin: data.admin || false,
+                joinedDate: data.joinDate || null
+            }))
+            .sort((a, b) => b.messages - a.messages)
+        
+        res.json(groups)
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message })
+    }
+})
+
+// ── API: Advanced Settings GET ──────────────────────────────────────────────────
+app.get('/api/advanced-settings', (req, res) => {
+    try {
+        const settings = require('./settings')
+        res.json({
+            prefix: settings.prefix || '.',
+            autoTyping: settings.autoTyping !== false,
+            autoRead: settings.autoRead !== false,
+            antiDelete: settings.antiDelete !== false,
+            autoStatus: settings.autoStatus !== false,
+            logChat: settings.logChat !== false,
+            alwaysOnline: settings.alwaysOnline || false,
+            readReceipts: settings.readReceipts !== false,
+            botLanguage: settings.botLanguage || 'en'
+        })
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message })
+    }
+})
+
+// ── API: Advanced Settings POST ────────────────────────────────────────────────
+app.post('/api/advanced-settings', (req, res) => {
+    try {
+        const { key, value } = req.body
+        if (!key) return res.status(400).json({ success: false, error: 'Key required.' })
+        
+        const settingsPath = path.join(__dirname, 'settings.js')
+        let content = fs.readFileSync(settingsPath, 'utf8')
+        
+        // Simple key-value replacement for boolean/string settings
+        const valueStr = typeof value === 'boolean' ? String(value) : `'${String(value).replace(/'/g, "\\'")}'`
+        content = content.replace(
+            new RegExp(`(${key}\\s*:\\s*)([^,}]+)`, 'g'),
+            `$1${valueStr}`
+        )
+        
+        fs.writeFileSync(settingsPath, content, 'utf8')
+        delete require.cache[require.resolve('./settings')]
+        
+        res.json({ success: true, message: `Setting updated! Restart bot for effect.` })
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message })
+    }
+})
+
 // ── Serve dashboard ──────────────────────────────────────────────────────────
 app.get('/{*splat}', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'))
