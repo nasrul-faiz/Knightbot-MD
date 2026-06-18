@@ -3,6 +3,9 @@ nixPkgs = ["nodejs_20", "ffmpeg", "python3", "gnumake", "gcc", "vips", "pkg-conf
 
 [phases.install]
 cmds = [
+  "npm config set fetch-retry-mintimeout 20000",
+  "npm config set fetch-retry-maxtimeout 120000",
+  "npm config set fetch-retries 5",
   "npm install --legacy-peer-deps"
 ]
 

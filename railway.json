@@ -4,7 +4,6 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "runtime": "V2",
     "numReplicas": 1,
     "startCommand": "bash start.sh",
     "sleepApplication": false,
