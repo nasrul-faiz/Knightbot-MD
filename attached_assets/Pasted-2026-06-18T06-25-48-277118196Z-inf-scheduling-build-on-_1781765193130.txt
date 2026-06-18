@@ -1,0 +1,56 @@
+2026-06-18T06:25:48.277118196Z [inf]  scheduling build on Metal builder "production-builderv3-us-west1-dqfb"
+2026-06-18T06:25:54.395030404Z [inf]  unpacking archive
+2026-06-18T06:25:54.534348764Z [inf]  [internal] load build definition from Dockerfile
+2026-06-18T06:25:54.534349386Z [inf]  [internal] load build definition from Dockerfile
+2026-06-18T06:25:54.535546598Z [inf]  [internal] load build definition from Dockerfile
+2026-06-18T06:25:54.561860553Z [inf]  [internal] load build definition from Dockerfile
+2026-06-18T06:25:54.569989278Z [inf]  [internal] load metadata for docker.io/library/node:20-slim
+2026-06-18T06:25:54.990515909Z [inf]  [internal] load metadata for docker.io/library/node:20-slim
+2026-06-18T06:25:54.990859176Z [inf]  [internal] load .dockerignore
+2026-06-18T06:25:54.990971163Z [inf]  [internal] load .dockerignore
+2026-06-18T06:25:54.992467601Z [inf]  [internal] load .dockerignore
+2026-06-18T06:25:55.035666669Z [inf]  [internal] load .dockerignore
+2026-06-18T06:25:55.045361512Z [inf]  [7/7] RUN mkdir -p data session public/uploads temp tmp
+2026-06-18T06:25:55.045362582Z [inf]  [6/7] COPY . .
+2026-06-18T06:25:55.045363406Z [inf]  [5/7] RUN npm config set fetch-retry-mintimeout 20000 &&     npm config set fetch-retry-maxtimeout 120000 &&     npm config set fetch-retries 5 &&     npm install --legacy-peer-deps
+2026-06-18T06:25:55.045364181Z [inf]  [4/7] COPY package*.json .npmrc ./
+2026-06-18T06:25:55.045364934Z [inf]  [internal] load build context
+2026-06-18T06:25:55.045365616Z [inf]  [3/7] WORKDIR /app
+2026-06-18T06:25:55.045366202Z [inf]  [2/7] RUN apt-get update && apt-get install -y     ffmpeg     python3     make     g++     && rm -rf /var/lib/apt/lists/*
+2026-06-18T06:25:55.045366902Z [inf]  [1/7] FROM docker.io/library/node:20-slim@sha256:2cf067cfed83d5ea958367df9f966191a942351a2df77d6f0193e162b5febfc0
+2026-06-18T06:25:55.045507038Z [inf]  [1/7] FROM docker.io/library/node:20-slim@sha256:2cf067cfed83d5ea958367df9f966191a942351a2df77d6f0193e162b5febfc0
+2026-06-18T06:25:55.045507946Z [inf]  [internal] load build context
+2026-06-18T06:25:55.063585632Z [inf]  [1/7] FROM docker.io/library/node:20-slim@sha256:2cf067cfed83d5ea958367df9f966191a942351a2df77d6f0193e162b5febfc0
+2026-06-18T06:25:55.072070106Z [inf]  [2/7] RUN apt-get update && apt-get install -y     ffmpeg     python3     make     g++     && rm -rf /var/lib/apt/lists/*
+2026-06-18T06:25:55.072070927Z [inf]  [3/7] WORKDIR /app
+2026-06-18T06:25:55.072071560Z [inf]  [internal] load build context
+2026-06-18T06:25:55.569628233Z [inf]  uploading snapshot
+2026-06-18T06:25:56.124773043Z [inf]  [internal] load build context
+2026-06-18T06:25:56.174501244Z [inf]  [4/7] COPY package*.json .npmrc ./
+2026-06-18T06:25:56.311060355Z [inf]  [4/7] COPY package*.json .npmrc ./
+2026-06-18T06:25:56.318169966Z [inf]  [5/7] RUN npm config set fetch-retry-mintimeout 20000 &&     npm config set fetch-retry-maxtimeout 120000 &&     npm config set fetch-retries 5 &&     npm install --legacy-peer-deps
+2026-06-18T06:26:00.380717219Z [inf]  npm warn deprecated youtube-yts@2.0.0: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+
+2026-06-18T06:26:00.756443005Z [inf]  npm warn deprecated youtubedl-core@4.11.7: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+
+2026-06-18T06:26:00.94669023Z [inf]  npm warn deprecated prebuild-install@7.1.3: No longer maintained. Please contact the author of the relevant native addon; alternatives are available.
+
+2026-06-18T06:26:00.958382614Z [inf]  npm warn deprecated querystring@0.2.0: The querystring API is considered Legacy. new code should use the URLSearchParams API instead.
+
+2026-06-18T06:26:02.173688767Z [inf]  npm warn deprecated axios@0.20.0: Critical security vulnerability fixed in v0.21.1. For more information, see https://github.com/axios/axios/pull/3410
+
+2026-06-18T06:26:02.899075913Z [inf]  npm warn deprecated ruhend-scraper@8.3.0: please update to the latest version "ruhend-scraper": "latest" or "ruhend-scraper": "*" 
+
+2026-06-18T06:34:20.929076663Z [inf]  npm error code ENOTFOUND
+npm error syscall getaddrinfo
+npm error errno ENOTFOUND
+npm error network request to http://package-firewall.replit.local/npm/whatwg-mimetype/-/whatwg-mimetype-4.0.0.tgz failed, reason: getaddrinfo ENOTFOUND package-firewall.replit.local
+npm error network This is a problem related to network connectivity.
+npm error network In most cases you are behind a proxy or have bad network settings.
+npm error network
+npm error network If you are behind a proxy, please make sure that the
+npm error network 'proxy' config is set properly.  See: 'npm help config'
+npm error A complete log of this run can be found in: /root/.npm/_logs/2026-06-18T06_25_57_790Z-debug-0.log
+
+2026-06-18T06:34:21.771245433Z [err]  [5/7] RUN npm config set fetch-retry-mintimeout 20000 &&     npm config set fetch-retry-maxtimeout 120000 &&     npm config set fetch-retries 5 &&     npm install --legacy-peer-deps
+2026-06-18T06:34:21.804854059Z [err]  Build Failed: build daemon returned an error < failed to solve: process "/bin/sh -c npm config set fetch-retry-mintimeout 20000 &&     npm config set fetch-retry-maxtimeout 120000 &&     npm config set fetch-retries 5 &&     npm install --legacy-peer-deps" did not complete successfully: exit code: 1 >

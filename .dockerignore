@@ -1,0 +1,9 @@
+node_modules
+package-lock.json
+session
+data
+.git
+*.log
+temp
+tmp
+public/uploads
