@@ -20,6 +20,7 @@ async function helpCommand(sock, chatId, message) {
 ║ ➤ .alive
 ║ ➤ .tts <text>
 ║ ➤ .owner
+║ ➤ .twilio
 ║ ➤ .joke
 ║ ➤ .quote
 ║ ➤ .fact
