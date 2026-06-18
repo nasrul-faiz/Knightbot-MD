@@ -90,10 +90,10 @@ async function helpCommand(sock, chatId, message) {
 🎨 *Image/Sticker Commands*:
 ║ ➤ .blur <image>
 ║ ➤ .simage <reply to sticker>
-║ ➤ .sticker <reply to image>
+║ ➤ .sticker <reply to image/video/sticker>
 ║ ➤ .removebg
 ║ ➤ .remini
-║ ➤ .crop <reply to image>
+║ ➤ .crop <reply to image/video/sticker>
 ║ ➤ .tgsticker <Link>
 ║ ➤ .meme
 ║ ➤ .take <packname> 
