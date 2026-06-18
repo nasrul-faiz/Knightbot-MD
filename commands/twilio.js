@@ -4,28 +4,28 @@ async function twilioCommand(sock, chatId, message) {
     const templateButtons = [
         {
             urlButton: {
-                displayText: '🌐 Visit Website',
-                url: 'https://example.com'
+                displayText: '🌐 Visit GitHub',
+                url: 'https://github.com/gatotkacabatu999-lab/Knightbot-MD'
             }
         },
         {
             callButton: {
-                displayText: '📞 Call Owner',
+                displayText: '📞 Contact Owner',
                 phoneNumber: `+${settings.ownerNumber}`
             }
         },
         {
             quickReplyButton: {
-                displayText: '💬 Help',
+                displayText: '💬 Get Help',
                 id: '.help'
             }
         }
     ];
 
     await sock.sendMessage(chatId, {
-        text: 'Here are your Twilio-style buttons:',
-        footer: 'KnightBot MD',
-        templateButtons: templateButtons
+        text: `Hello! I am ${settings.botName}. Choose an option below to get started.`,
+        footer: `${settings.botName} • by ${settings.botOwner}`,
+        templateButtons
     }, { quoted: message });
 }
 
