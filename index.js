@@ -49,6 +49,7 @@ const { PHONENUMBER_MCC } = require('@whiskeysockets/baileys/lib/Utils/generics'
 const { rmSync, existsSync } = require('fs')
 const { join } = require('path')
 const QRCode = require('qrcode')
+const { startScheduler } = require('./lib/scheduler')
 
 // Import lightweight store
 const store = require('./lib/lightweight_store')
@@ -138,6 +139,9 @@ async function startXeonBotInc() {
             connectTimeoutMs: 60000,
             keepAliveIntervalMs: 10000,
         })
+
+        // Start chat scheduler once the socket is ready to send messages
+        startScheduler(XeonBotInc)
 
         // Save credentials when they update
         XeonBotInc.ev.on('creds.update', saveCreds)

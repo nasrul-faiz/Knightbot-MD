@@ -156,6 +156,7 @@
       <button class="nav-item active" onclick="showTab('settings', this)" title="Settings"><span class="nav-emoji">⚙️</span> <span class="nav-label">Settings</span></button>
       <button class="nav-item" onclick="showTab('features', this)" title="Features"><span class="nav-emoji">🔧</span> <span class="nav-label">Features</span></button>
       <button class="nav-item" onclick="showTab('groups', this)" title="Groups"><span class="nav-emoji">👥</span> <span class="nav-label">Groups</span></button>
+      <button class="nav-item" onclick="showTab('schedules', this)" title="Schedules"><span class="nav-emoji">⏰</span> <span class="nav-label">Schedules</span></button>
       <button class="nav-item" onclick="showTab('logs', this)" title="Logs"><span class="nav-emoji">📋</span> <span class="nav-label">Logs</span></button>
       <button class="nav-item" onclick="showTab('banned', this)" title="Banned"><span class="nav-emoji">🚫</span> <span class="nav-label">Banned</span></button>
       <button class="nav-item" onclick="showTab('customcmds', this)" title="Custom Commands"><span class="nav-emoji">🤖</span> <span class="nav-label">Custom Commands</span></button>
@@ -258,6 +259,54 @@
         <button class="btn btn-outline btn-sm" onclick="loadGroups()">↻ Refresh</button>
       </div>
       <div id="groupsContent"><p style="color:var(--text-dim);font-size:13px">Loading...</p></div>
+    </div>
+  </div>
+
+  <!-- Logs Tab -->
+  <div id="tab-schedules" style="display:none">
+    <div class="grid grid-2" style="margin-bottom:16px">
+      <div class="card">
+        <div class="card-title">⏰ Add Scheduled Chat</div>
+        <div class="form-group">
+          <label>Target Chat / Group</label>
+          <select id="scheduleChatId"></select>
+        </div>
+        <div class="form-group">
+          <label>Type</label>
+          <select id="scheduleType" onchange="toggleScheduleDateField()">
+            <option value="daily">Daily</option>
+            <option value="once">Once</option>
+          </select>
+        </div>
+        <div class="form-group" id="scheduleDateWrap" style="display:none">
+          <label>Date (YYYY-MM-DD)</label>
+          <input type="date" id="scheduleDate" />
+        </div>
+        <div class="form-group">
+          <label>Time (HH:MM)</label>
+          <input type="time" id="scheduleTime" />
+        </div>
+        <div class="form-group">
+          <label>Message</label>
+          <textarea id="scheduleMessage" rows="4" placeholder="Scheduled message..."></textarea>
+        </div>
+        <button class="btn btn-green" onclick="addSchedule()" style="width:100%">➕ Add Schedule</button>
+      </div>
+      <div class="card">
+        <div class="card-title">📌 Tips</div>
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.8">
+          <div>• Type <b style="color:var(--text)">Daily</b> akan hantar mesej setiap hari pada jam yang ditetapkan.</div>
+          <div>• Type <b style="color:var(--text)">Once</b> akan hantar sekali sahaja pada tarikh + masa dipilih.</div>
+          <div>• Anda boleh edit atau delete schedule dari senarai di bawah.</div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title" style="justify-content:space-between">
+        <span>📋 Scheduled Chat List</span>
+        <button class="btn btn-outline btn-sm" onclick="loadSchedules(true)">↻ Refresh</button>
+      </div>
+      <div id="schedulesContent"><p style="color:var(--text-dim);font-size:13px">Loading...</p></div>
     </div>
   </div>
 
@@ -580,6 +629,7 @@ function showTab(name, btn) {
   if (name === 'session') loadSession()
   if (name === 'customcmds') loadCustomCommands()
   if (name === 'groups') loadGroups()
+  if (name === 'schedules') loadSchedules(true)
   if (name !== 'session') stopQrPoll()
 }
 
@@ -701,6 +751,10 @@ async function loadGroups() {
   el.innerHTML = '<p style="color:var(--text-dim);font-size:13px">Loading...</p>'
   try {
     const groups = await fetch('/api/groups').then(r => r.json())
+    if (groups && groups.success === false) {
+      el.innerHTML = `<p style="color:var(--red);font-size:13px">${escapeHtml(groups.error || 'Failed to load groups')}</p>`
+      return
+    }
     if (!groups || !groups.length) {
       el.innerHTML = `
         <div style="text-align:center;padding:32px 0;color:var(--text-dim)">
@@ -721,11 +775,187 @@ async function loadGroups() {
               <span>👤 ${g.members} members</span>
               <span>${g.admin ? '👑 Admin' : '👶 Member'}</span>
             </div>
-            </div>
           </div>`).join('')}
       </div>`
   } catch(e) {
     el.innerHTML = '<p style="color:var(--red);font-size:13px">Failed to load groups.</p>'
+  }
+}
+
+// ── Schedules ────────────────────────────────────────────────────────────────
+let scheduleGroupCache = []
+
+function toggleScheduleDateField() {
+  const type = document.getElementById('scheduleType').value
+  document.getElementById('scheduleDateWrap').style.display = type === 'once' ? '' : 'none'
+}
+
+function formatDateTime(ts) {
+  if (!ts) return '-'
+  const d = new Date(ts)
+  if (Number.isNaN(d.getTime())) return '-'
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
+}
+
+async function loadScheduleGroups() {
+  const sel = document.getElementById('scheduleChatId')
+  try {
+    const groups = await fetch('/api/groups').then(r => r.json())
+    scheduleGroupCache = Array.isArray(groups) ? groups : []
+    if (!scheduleGroupCache.length) {
+      sel.innerHTML = '<option value="">No groups available</option>'
+      return
+    }
+    sel.innerHTML = scheduleGroupCache.map(g => `<option value="${escapeHtml(g.id)}">${escapeHtml(g.name)} (${escapeHtml(g.id)})</option>`).join('')
+  } catch (e) {
+    sel.innerHTML = '<option value="">Failed to load groups</option>'
+  }
+}
+
+async function loadSchedules(withGroups = false) {
+  if (withGroups) await loadScheduleGroups()
+  const el = document.getElementById('schedulesContent')
+  el.innerHTML = '<p style="color:var(--text-dim);font-size:13px">Loading...</p>'
+  try {
+    const schedules = await fetch('/api/schedules').then(r => r.json())
+    if (schedules && schedules.success === false) {
+      el.innerHTML = `<p style="color:var(--red);font-size:13px">${escapeHtml(schedules.error || 'Failed to load schedules')}</p>`
+      return
+    }
+    if (!Array.isArray(schedules) || !schedules.length) {
+      el.innerHTML = '<p style="color:var(--text-dim);font-size:13px">Belum ada scheduled chat.</p>'
+      return
+    }
+
+    const groupName = (chatId) => {
+      const found = scheduleGroupCache.find(g => g.id === chatId)
+      return found ? found.name : chatId
+    }
+
+    el.innerHTML = `
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border)">
+              <th style="text-align:left;padding:8px 10px;color:var(--text-dim)">ID</th>
+              <th style="text-align:left;padding:8px 10px;color:var(--text-dim)">Chat</th>
+              <th style="text-align:left;padding:8px 10px;color:var(--text-dim)">Type</th>
+              <th style="text-align:left;padding:8px 10px;color:var(--text-dim)">Time</th>
+              <th style="text-align:left;padding:8px 10px;color:var(--text-dim)">Message</th>
+              <th style="text-align:right;padding:8px 10px;color:var(--text-dim)">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${schedules.map(s => `
+              <tr style="border-bottom:1px solid rgba(48,54,61,.4)">
+                <td style="padding:10px">#${s.id}</td>
+                <td style="padding:10px">${escapeHtml(groupName(s.chatId))}</td>
+                <td style="padding:10px">${s.type === 'daily' ? 'Daily' : 'Once'}</td>
+                <td style="padding:10px">${escapeHtml(s.nextRunText || formatDateTime(s.nextRunAt))}</td>
+                <td style="padding:10px;max-width:320px">${escapeHtml((s.message || '').slice(0, 80))}${(s.message || '').length > 80 ? '…' : ''}</td>
+                <td style="padding:10px;text-align:right;white-space:nowrap">
+                  <button class="btn btn-outline btn-sm" style="margin-right:6px" onclick="editSchedule(${s.id})">✏️ Edit</button>
+                  <button class="btn btn-sm" style="background:rgba(248,81,73,.15);color:var(--red);border:1px solid rgba(248,81,73,.4)" onclick="deleteScheduleItem(${s.id})">🗑️ Delete</button>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `
+  } catch (e) {
+    el.innerHTML = '<p style="color:var(--red);font-size:13px">Failed to load schedules.</p>'
+  }
+}
+
+async function addSchedule() {
+  const chatId = document.getElementById('scheduleChatId').value
+  const type = document.getElementById('scheduleType').value
+  const date = document.getElementById('scheduleDate').value
+  const time = document.getElementById('scheduleTime').value
+  const message = document.getElementById('scheduleMessage').value.trim()
+
+  if (!chatId) return showToast('Pilih chat/group dulu.', 'error')
+  if (!time) return showToast('Masa diperlukan.', 'error')
+  if (!message) return showToast('Mesej tak boleh kosong.', 'error')
+  if (type === 'once' && !date) return showToast('Tarikh diperlukan untuk once.', 'error')
+
+  const payload = { chatId, type, time, message }
+  if (type === 'once') payload.date = date
+
+  try {
+    const res = await fetch('/api/schedules', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(r => r.json())
+
+    if (!res.success) return showToast(res.error || 'Gagal tambah schedule.', 'error')
+
+    showToast('Schedule berjaya ditambah.')
+    document.getElementById('scheduleMessage').value = ''
+    if (type === 'once') document.getElementById('scheduleDate').value = ''
+    document.getElementById('scheduleTime').value = ''
+    loadSchedules()
+  } catch (e) {
+    showToast('Network error', 'error')
+  }
+}
+
+async function editSchedule(id) {
+  try {
+    const schedules = await fetch('/api/schedules').then(r => r.json())
+    const item = Array.isArray(schedules) ? schedules.find(s => Number(s.id) === Number(id)) : null
+    if (!item) return showToast('Schedule tak dijumpai.', 'error')
+
+    const newMessage = prompt('Edit message:', item.message || '')
+    if (newMessage === null) return
+    const trimmedMessage = newMessage.trim()
+    if (!trimmedMessage) return showToast('Mesej tak boleh kosong.', 'error')
+
+    let payload = {
+      chatId: item.chatId,
+      type: item.type,
+      message: trimmedMessage,
+      time: item.time
+    }
+
+    if (item.type === 'once') {
+      const newDate = prompt('Edit date (YYYY-MM-DD):', item.date || '')
+      if (newDate === null) return
+      const newTime = prompt('Edit time (HH:MM):', item.time || '')
+      if (newTime === null) return
+      payload.date = (newDate || '').trim()
+      payload.time = (newTime || '').trim()
+    } else {
+      const newTime = prompt('Edit time (HH:MM):', item.time || '')
+      if (newTime === null) return
+      payload.time = (newTime || '').trim()
+    }
+
+    const res = await fetch('/api/schedules/' + id, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(r => r.json())
+
+    if (!res.success) return showToast(res.error || 'Gagal update schedule.', 'error')
+    showToast('Schedule berjaya dikemaskini.')
+    loadSchedules()
+  } catch (e) {
+    showToast('Network error', 'error')
+  }
+}
+
+async function deleteScheduleItem(id) {
+  if (!confirm(`Padam schedule #${id}?`)) return
+  try {
+    const res = await fetch('/api/schedules/' + id, { method: 'DELETE' }).then(r => r.json())
+    if (!res.success) return showToast(res.error || 'Gagal padam schedule.', 'error')
+    showToast('Schedule dipadam.')
+    loadSchedules()
+  } catch (e) {
+    showToast('Network error', 'error')
   }
 }
 

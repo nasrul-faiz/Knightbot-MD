@@ -64,6 +64,7 @@ async function helpCommand(sock, chatId, message) {
 ║ ➤ .setgdesc <description>
 ║ ➤ .setgname <new name>
 ║ ➤ .setgpp (reply to image)
+║ ➤ .schedule <opsyen>
 ╚═══════════════════╝
 
 ╔═══════════════════╗

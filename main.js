@@ -143,6 +143,7 @@ const { anticallCommand, readState: readAnticallState } = require('./commands/an
 const { pmblockerCommand, readState: readPmBlockerState } = require('./commands/pmblocker');
 const settingsCommand = require('./commands/settings');
 const soraCommand = require('./commands/sora');
+const scheduleCommand = require('./commands/schedule');
 
 // Global settings
 global.packname = settings.packname;
@@ -1166,6 +1167,25 @@ async function handleMessages(sock, messageUpdate, printLog) {
                 break;
             case userMessage.startsWith('.sora'):
                 await soraCommand(sock, chatId, message);
+                break;
+            case userMessage.startsWith('.schedule'):
+                if (isGroup) {
+                    if (!isSenderAdmin) {
+                        const adminStatus = await isAdmin(sock, chatId, senderId);
+                        isSenderAdmin = adminStatus.isSenderAdmin;
+                    }
+
+                    if (!isSenderAdmin && !senderIsOwnerOrSudo && !message.key.fromMe) {
+                        await sock.sendMessage(chatId, { text: '❌ Hanya admin group atau owner/sudo boleh guna .schedule' }, { quoted: message });
+                        break;
+                    }
+                } else if (!message.key.fromMe && !senderIsOwnerOrSudo) {
+                    await sock.sendMessage(chatId, { text: '❌ Hanya owner/sudo boleh guna .schedule di private chat' }, { quoted: message });
+                    break;
+                }
+
+                await scheduleCommand(sock, chatId, message, rawText, senderId);
+                commandExecuted = true;
                 break;
             default: {
                 // Check custom commands first

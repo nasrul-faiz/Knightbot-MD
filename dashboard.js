@@ -2,6 +2,14 @@ const express = require('express')
 const fs = require('fs')
 const path = require('path')
 const multer = require('multer')
+const {
+    listAllSchedules,
+    addDailySchedule,
+    addOnceSchedule,
+    updateScheduleById,
+    deleteSchedule,
+    formatDateTime,
+} = require('./lib/scheduler')
 
 const app = express()
 const PORT = process.env.PORT || 5000
@@ -69,6 +77,24 @@ function readJSON(filePath, fallback = null) {
     } catch {
         return fallback
     }
+}
+
+function getTotalMessagesForChat(messageCount, chatId) {
+    if (!messageCount || !chatId) return 0
+
+    const direct = messageCount[chatId]
+    if (typeof direct === 'number') return direct
+    if (direct && typeof direct === 'object') {
+        return Object.values(direct).reduce((sum, val) => sum + (typeof val === 'number' ? val : 0), 0)
+    }
+
+    const nested = messageCount.messageCount && messageCount.messageCount[chatId]
+    if (typeof nested === 'number') return nested
+    if (nested && typeof nested === 'object') {
+        return Object.values(nested).reduce((sum, val) => sum + (typeof val === 'number' ? val : 0), 0)
+    }
+
+    return 0
 }
 
 // ── API: Bot status ─────────────────────────────────────────────────────────
@@ -447,20 +473,133 @@ app.get('/api/groups', (req, res) => {
     try {
         const userGroupData = readJSON('./data/userGroupData.json', {})
         const messageCount = readJSON('./data/messageCount.json', {})
-        
-        const groups = Object.entries(userGroupData)
+
+        const map = new Map()
+
+        const entryObjects = Object.entries(userGroupData || {})
             .filter(([id]) => id.endsWith('@g.us'))
-            .map(([id, data]) => ({
-                id,
-                name: data.groupName || 'Unknown',
-                members: data.members ? Object.keys(data.members).length : 0,
-                messages: messageCount[id] || 0,
-                admin: data.admin || false,
-                joinedDate: data.joinDate || null
-            }))
-            .sort((a, b) => b.messages - a.messages)
+            .map(([id, data]) => ({ id, ...(data || {}) }))
+
+        const legacyGroups = Array.isArray(userGroupData?.groups)
+            ? userGroupData.groups
+                .map((g) => ({
+                    id: g?.id || g?.jid || g?.groupId || '',
+                    groupName: g?.groupName || g?.name || 'Unknown',
+                    members: g?.members || {},
+                    admin: !!g?.admin,
+                    joinDate: g?.joinDate || g?.joinedDate || null,
+                }))
+                .filter((g) => typeof g.id === 'string' && g.id.endsWith('@g.us'))
+            : []
+
+        const messageCountGroups = Object.keys(messageCount || {})
+            .filter((id) => id.endsWith('@g.us'))
+            .map((id) => ({ id, groupName: 'Unknown', members: {}, admin: false, joinDate: null }))
+
+        for (const data of [...entryObjects, ...legacyGroups, ...messageCountGroups]) {
+            if (!data.id) continue
+            const existing = map.get(data.id) || {
+                id: data.id,
+                name: 'Unknown',
+                members: 0,
+                messages: 0,
+                admin: false,
+                joinedDate: null,
+            }
+
+            const memberCount = data.members
+                ? (Array.isArray(data.members) ? data.members.length : Object.keys(data.members).length)
+                : existing.members
+
+            map.set(data.id, {
+                id: data.id,
+                name: data.groupName || data.name || existing.name,
+                members: memberCount || 0,
+                messages: getTotalMessagesForChat(messageCount, data.id),
+                admin: typeof data.admin === 'boolean' ? data.admin : existing.admin,
+                joinedDate: data.joinDate || data.joinedDate || existing.joinedDate,
+            })
+        }
+
+        const groups = Array.from(map.values()).sort((a, b) => b.messages - a.messages)
         
         res.json(groups)
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message })
+    }
+})
+
+// ── API: Chat Schedules ───────────────────────────────────────────────────────
+app.get('/api/schedules', (req, res) => {
+    try {
+        const chatId = (req.query.chatId || '').trim()
+        const schedules = listAllSchedules()
+            .filter((item) => !chatId || item.chatId === chatId)
+            .map((item) => ({
+                ...item,
+                nextRunText: formatDateTime(item.nextRunAt),
+            }))
+
+        res.json(schedules)
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message })
+    }
+})
+
+app.post('/api/schedules', (req, res) => {
+    try {
+        const { chatId, type, date, time, message, createdBy } = req.body
+        if (!chatId || !type || !time || !message) {
+            return res.status(400).json({ success: false, error: 'chatId, type, time, message diperlukan.' })
+        }
+
+        let result
+        if (type === 'daily') {
+            result = addDailySchedule(chatId, String(message).trim(), String(time).trim(), createdBy || 'dashboard')
+        } else if (type === 'once') {
+            if (!date) return res.status(400).json({ success: false, error: 'date diperlukan untuk type once.' })
+            result = addOnceSchedule(chatId, String(message).trim(), String(date).trim(), String(time).trim(), createdBy || 'dashboard')
+        } else {
+            return res.status(400).json({ success: false, error: 'type mesti daily atau once.' })
+        }
+
+        if (!result.ok) return res.status(400).json({ success: false, error: result.error })
+        res.json({ success: true, schedule: { ...result.schedule, nextRunText: formatDateTime(result.schedule.nextRunAt) } })
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message })
+    }
+})
+
+app.put('/api/schedules/:id', (req, res) => {
+    try {
+        const id = Number(req.params.id)
+        const { chatId, type, date, time, message } = req.body
+
+        const result = updateScheduleById(id, {
+            chatId,
+            type,
+            date,
+            time,
+            message,
+        })
+
+        if (!result.ok) return res.status(400).json({ success: false, error: result.error })
+        res.json({ success: true, schedule: { ...result.schedule, nextRunText: formatDateTime(result.schedule.nextRunAt) } })
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message })
+    }
+})
+
+app.delete('/api/schedules/:id', (req, res) => {
+    try {
+        const id = Number(req.params.id)
+        const all = listAllSchedules()
+        const target = all.find((item) => Number(item.id) === id)
+        if (!target) return res.status(404).json({ success: false, error: 'Schedule tidak dijumpai.' })
+
+        const result = deleteSchedule(target.chatId, id)
+        if (!result.ok) return res.status(400).json({ success: false, error: result.error })
+        res.json({ success: true, message: `Schedule #${id} dipadam.` })
     } catch (err) {
         res.status(500).json({ success: false, error: err.message })
     }
