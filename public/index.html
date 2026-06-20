@@ -1445,19 +1445,43 @@ function addCcButtonRow(containerId, button = {}) {
   const container = document.getElementById(containerId)
   if (!container) return
 
-  const parsed = (() => {
-    if (!button || typeof button !== 'object') return {}
-    if (button.buttonParamsJson) {
-      try {
-        return JSON.parse(button.buttonParamsJson)
-      } catch (_) {
-        return {}
+  let parsed = {}
+  let type = 'quick_reply'
+  if (button && typeof button === 'object') {
+    if (button.quickReplyButton) {
+      type = 'quick_reply'
+      parsed = {
+        display_text: button.quickReplyButton.displayText || '',
+        id: button.quickReplyButton.id || ''
       }
+    } else if (button.urlButton) {
+      const url = String(button.urlButton.url || '')
+      const waMatch = url.match(/^https?:\/\/wa\.me\/(\d+)/i)
+      type = waMatch ? 'whatsapp' : 'url'
+      parsed = {
+        display_text: button.urlButton.displayText || '',
+        url,
+        phone_number: waMatch ? waMatch[1] : ''
+      }
+    } else if (button.callButton) {
+      type = 'call'
+      parsed = {
+        display_text: button.callButton.displayText || '',
+        phone_number: button.callButton.phoneNumber || ''
+      }
+    } else if (button.buttonParamsJson) {
+      try {
+        parsed = JSON.parse(button.buttonParamsJson)
+        type = button.name || 'quick_reply'
+      } catch (_) {
+        parsed = {}
+      }
+    } else {
+      parsed = button
+      type = button.name || parsed.type || 'quick_reply'
     }
-    return button
-  })()
+  }
 
-  const type = button.name || parsed.type || 'quick_reply'
   const meta = getButtonTypeMeta(type)
   const row = document.createElement('div')
   row.className = 'cc-button-row'
@@ -1530,16 +1554,41 @@ function collectCcButtons(containerId) {
       throw new Error('Button value is required.')
     }
 
-    const payload = { display_text: label }
-    if (type === 'quick_reply') payload.id = target || label
-    else if (type === 'url') payload.url = target
-    else if (type === 'call') payload.phone_number = target
-    else if (type === 'whatsapp') payload.phone_number = target
-
-    buttons.push({
-      name: type,
-      buttonParamsJson: JSON.stringify(payload)
-    })
+    const index = buttons.length + 1
+    if (type === 'quick_reply') {
+      buttons.push({
+        index,
+        quickReplyButton: {
+          displayText: label,
+          id: target || label
+        }
+      })
+    } else if (type === 'url') {
+      buttons.push({
+        index,
+        urlButton: {
+          displayText: label,
+          url: target
+        }
+      })
+    } else if (type === 'call') {
+      buttons.push({
+        index,
+        callButton: {
+          displayText: label,
+          phoneNumber: target
+        }
+      })
+    } else if (type === 'whatsapp') {
+      const digits = String(target).replace(/\D/g, '')
+      buttons.push({
+        index,
+        urlButton: {
+          displayText: label,
+          url: `https://wa.me/${digits}`
+        }
+      })
+    }
   }
 
   return buttons

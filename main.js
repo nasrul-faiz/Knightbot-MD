@@ -191,15 +191,15 @@ function normalizeCustomCommandButtons(buttons) {
         if (!button || typeof button !== 'object') continue
 
         if (button.quickReplyButton) {
-            templateButtons.push({ quickReplyButton: button.quickReplyButton })
+            templateButtons.push(button.index ? { index: button.index, quickReplyButton: button.quickReplyButton } : { quickReplyButton: button.quickReplyButton })
             continue
         }
         if (button.urlButton) {
-            templateButtons.push({ urlButton: button.urlButton })
+            templateButtons.push(button.index ? { index: button.index, urlButton: button.urlButton } : { urlButton: button.urlButton })
             continue
         }
         if (button.callButton) {
-            templateButtons.push({ callButton: button.callButton })
+            templateButtons.push(button.index ? { index: button.index, callButton: button.callButton } : { callButton: button.callButton })
             continue
         }
 
@@ -208,7 +208,7 @@ function normalizeCustomCommandButtons(buttons) {
             const displayText = params.display_text || params.displayText || 'Open WhatsApp'
             const phoneNumber = String(params.phone_number || params.phoneNumber || '').replace(/\D/g, '')
             const url = phoneNumber ? `https://wa.me/${phoneNumber}` : params.url
-            if (url) templateButtons.push({ urlButton: { displayText, url } })
+            if (url) templateButtons.push(button.index ? { index: button.index, urlButton: { displayText, url } } : { urlButton: { displayText, url } })
             continue
         }
 
@@ -216,7 +216,7 @@ function normalizeCustomCommandButtons(buttons) {
             const params = parseCustomButtonParams(button) || {}
             const displayText = params.display_text || params.displayText || 'Open Link'
             const url = params.url || params.link
-            if (url) templateButtons.push({ urlButton: { displayText, url } })
+            if (url) templateButtons.push(button.index ? { index: button.index, urlButton: { displayText, url } } : { urlButton: { displayText, url } })
             continue
         }
 
@@ -224,7 +224,7 @@ function normalizeCustomCommandButtons(buttons) {
             const params = parseCustomButtonParams(button) || {}
             const displayText = params.display_text || params.displayText || 'Call'
             const phoneNumber = params.phone_number || params.phoneNumber
-            if (phoneNumber) templateButtons.push({ callButton: { displayText, phoneNumber } })
+            if (phoneNumber) templateButtons.push(button.index ? { index: button.index, callButton: { displayText, phoneNumber } } : { callButton: { displayText, phoneNumber } })
             continue
         }
 
@@ -232,7 +232,7 @@ function normalizeCustomCommandButtons(buttons) {
             const params = parseCustomButtonParams(button) || {}
             const displayText = params.display_text || params.displayText || button.buttonText?.displayText || params.title || button.title || 'Button'
             const buttonId = params.id || params.buttonId || button.buttonId || displayText
-            templateButtons.push({ quickReplyButton: { displayText, id: buttonId } })
+            templateButtons.push(button.index ? { index: button.index, quickReplyButton: { displayText, id: buttonId } } : { quickReplyButton: { displayText, id: buttonId } })
             legacyButtons.push({ buttonId, buttonText: { displayText }, type: 1 })
             continue
         }
