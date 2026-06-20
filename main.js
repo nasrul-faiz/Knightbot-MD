@@ -203,12 +203,12 @@ function normalizeCustomCommandButtons(buttons) {
             continue
         }
 
-        if (button.name === 'quick_reply' || button.buttonParamsJson || button.buttonId || button.buttonText) {
+        if (button.name === 'whatsapp') {
             const params = parseCustomButtonParams(button) || {}
-            const displayText = params.display_text || params.displayText || button.buttonText?.displayText || params.title || button.title || 'Button'
-            const buttonId = params.id || params.buttonId || button.buttonId || displayText
-            templateButtons.push({ quickReplyButton: { displayText, id: buttonId } })
-            legacyButtons.push({ buttonId, buttonText: { displayText }, type: 1 })
+            const displayText = params.display_text || params.displayText || 'Open WhatsApp'
+            const phoneNumber = String(params.phone_number || params.phoneNumber || '').replace(/\D/g, '')
+            const url = phoneNumber ? `https://wa.me/${phoneNumber}` : params.url
+            if (url) templateButtons.push({ urlButton: { displayText, url } })
             continue
         }
 
@@ -225,6 +225,16 @@ function normalizeCustomCommandButtons(buttons) {
             const displayText = params.display_text || params.displayText || 'Call'
             const phoneNumber = params.phone_number || params.phoneNumber
             if (phoneNumber) templateButtons.push({ callButton: { displayText, phoneNumber } })
+            continue
+        }
+
+        if (button.name === 'quick_reply' || button.buttonId || button.buttonText || button.buttonParamsJson) {
+            const params = parseCustomButtonParams(button) || {}
+            const displayText = params.display_text || params.displayText || button.buttonText?.displayText || params.title || button.title || 'Button'
+            const buttonId = params.id || params.buttonId || button.buttonId || displayText
+            templateButtons.push({ quickReplyButton: { displayText, id: buttonId } })
+            legacyButtons.push({ buttonId, buttonText: { displayText }, type: 1 })
+            continue
         }
     }
 

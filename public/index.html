@@ -379,8 +379,9 @@
           <input type="text" id="ccDescription" placeholder="Greeting command" />
         </div>
         <div class="form-group">
-          <label>Buttons JSON <span style="color:var(--text-dim)">(optional)</span></label>
-          <textarea id="ccButtons" rows="4" placeholder='[{"name":"quick_reply","buttonParamsJson":"{\"display_text\":\"Klik saya\",\"id\":\".button\"}"}]'></textarea>
+          <label>Buttons <span style="color:var(--text-dim)">(optional)</span></label>
+          <div id="ccButtonsContainer" style="display:flex;flex-direction:column;gap:8px"></div>
+          <button type="button" class="btn btn-outline btn-sm" onclick="addCcButtonRow('ccButtonsContainer')" style="margin-top:8px">+ Add Button</button>
         </div>
         <div class="form-group">
           <label>Category</label>
@@ -482,8 +483,9 @@
           <input type="text" id="ccEditDescription" />
         </div>
         <div class="form-group">
-          <label>Buttons JSON <span style="color:var(--text-dim)">(optional)</span></label>
-          <textarea id="ccEditButtons" rows="4" placeholder='[{"name":"quick_reply","buttonParamsJson":"{\"display_text\":\"Klik saya\",\"id\":\".button\"}"}]'></textarea>
+          <label>Buttons <span style="color:var(--text-dim)">(optional)</span></label>
+          <div id="ccEditButtonsContainer" style="display:flex;flex-direction:column;gap:8px"></div>
+          <button type="button" class="btn btn-outline btn-sm" onclick="addCcButtonRow('ccEditButtonsContainer')" style="margin-top:8px">+ Add Button</button>
         </div>
         <div class="form-group">
           <label>Category</label>
@@ -557,7 +559,7 @@
         <div style="font-size:13px;color:var(--text-dim);line-height:1.7">
           <b style="color:var(--text)">Trigger</b> — command yang user taip di WhatsApp. Contoh: <code style="background:var(--surface2);padding:1px 6px;border-radius:3px">.hello</code><br><br>
           <b style="color:var(--text)">Response</b> — mesej balasan bot (boleh teks, emoji, caption media).<br><br>
-          <b style="color:var(--text)">Buttons JSON</b> — array tombol optional. Contoh quick reply: <code style="background:var(--surface2);padding:1px 6px;border-radius:3px">[{"name":"quick_reply","buttonParamsJson":"{\"display_text\":\"Klik saya\",\"id\":\".button\"}"}]</code><br><br>
+          <b style="color:var(--text)">Buttons</b> — tambah nama tombol dan fungsi. Pilihan fungsi: quick reply, URL, call, dan WhatsApp.<br><br>
           <b style="color:var(--text)">Category</b> — untuk susun command dalam dashboard (General, Fun, Utility, dll).<br><br>
           <b style="color:var(--text)">Works in</b> — group dan private chat.<br><br>
           <b style="color:var(--text)">Priority</b> — custom command jalan selepas built-in command, jadi tak override command asal bot.
@@ -1426,6 +1428,123 @@ function handleCcEditFileChange() {
   uploadMediaFile(file, 'ccEditUploadBar', 'ccEditUploadStatus', 'ccEditUploadProgress', 'ccEditUploadedUrl', 'ccEditDropText')
 }
 
+function getButtonTypeMeta(type) {
+  switch (type) {
+    case 'url':
+      return { valueLabel: 'URL', placeholder: 'https://example.com' }
+    case 'call':
+      return { valueLabel: 'Phone Number', placeholder: '+628123456789' }
+    case 'whatsapp':
+      return { valueLabel: 'WhatsApp Number', placeholder: '628123456789' }
+    default:
+      return { valueLabel: 'Button Value', placeholder: '.button' }
+  }
+}
+
+function addCcButtonRow(containerId, button = {}) {
+  const container = document.getElementById(containerId)
+  if (!container) return
+
+  const parsed = (() => {
+    if (!button || typeof button !== 'object') return {}
+    if (button.buttonParamsJson) {
+      try {
+        return JSON.parse(button.buttonParamsJson)
+      } catch (_) {
+        return {}
+      }
+    }
+    return button
+  })()
+
+  const type = button.name || parsed.type || 'quick_reply'
+  const meta = getButtonTypeMeta(type)
+  const row = document.createElement('div')
+  row.className = 'cc-button-row'
+  row.style.cssText = 'display:grid;grid-template-columns:1.2fr .8fr 1.2fr auto;gap:8px;align-items:end'
+  row.innerHTML = `
+    <div class="form-group" style="margin:0">
+      <label>Button Name</label>
+      <input type="text" class="cc-button-label" placeholder="Click me" value="${escapeAttr(parsed.display_text || parsed.displayText || '')}" />
+    </div>
+    <div class="form-group" style="margin:0">
+      <label>Function</label>
+      <select class="cc-button-type" onchange="syncCcButtonRow(this)">
+        <option value="quick_reply">Quick Reply</option>
+        <option value="url">URL</option>
+        <option value="call">Call</option>
+        <option value="whatsapp">WhatsApp</option>
+      </select>
+    </div>
+    <div class="form-group" style="margin:0">
+      <label class="cc-button-target-label">${meta.valueLabel}</label>
+      <input type="text" class="cc-button-target" placeholder="${meta.placeholder}" value="${escapeAttr(parsed.id || parsed.url || parsed.phone_number || parsed.phoneNumber || '')}" />
+    </div>
+    <button type="button" class="btn btn-sm" style="background:rgba(248,81,73,.15);color:var(--red);border:1px solid rgba(248,81,73,.4);height:38px" onclick="removeCcButtonRow(this)">Remove</button>
+  `
+  container.appendChild(row)
+  const typeSelect = row.querySelector('.cc-button-type')
+  typeSelect.value = type
+  syncCcButtonRow(typeSelect)
+}
+
+function removeCcButtonRow(buttonEl) {
+  const row = buttonEl.closest('.cc-button-row')
+  if (row) row.remove()
+}
+
+function syncCcButtonRow(selectEl) {
+  const row = selectEl.closest('.cc-button-row')
+  if (!row) return
+  const meta = getButtonTypeMeta(selectEl.value)
+  row.querySelector('.cc-button-target-label').textContent = meta.valueLabel
+  row.querySelector('.cc-button-target').placeholder = meta.placeholder
+}
+
+function resetCcButtonRows(containerId, buttons = []) {
+  const container = document.getElementById(containerId)
+  if (!container) return
+  container.innerHTML = ''
+  if (Array.isArray(buttons) && buttons.length) {
+    buttons.forEach((button) => addCcButtonRow(containerId, button))
+  } else {
+    addCcButtonRow(containerId)
+  }
+}
+
+function collectCcButtons(containerId) {
+  const container = document.getElementById(containerId)
+  if (!container) return []
+
+  const buttons = []
+  const rows = container.querySelectorAll('.cc-button-row')
+  for (const row of rows) {
+    const label = row.querySelector('.cc-button-label').value.trim()
+    const type = row.querySelector('.cc-button-type').value
+    const target = row.querySelector('.cc-button-target').value.trim()
+
+    if (!label && !target) continue
+    if (!label) throw new Error('Button name is required.')
+
+    if (type !== 'quick_reply' && !target) {
+      throw new Error('Button value is required.')
+    }
+
+    const payload = { display_text: label }
+    if (type === 'quick_reply') payload.id = target || label
+    else if (type === 'url') payload.url = target
+    else if (type === 'call') payload.phone_number = target
+    else if (type === 'whatsapp') payload.phone_number = target
+
+    buttons.push({
+      name: type,
+      buttonParamsJson: JSON.stringify(payload)
+    })
+  }
+
+  return buttons
+}
+
 // ── Drag-and-drop setup (called after DOM ready) ───────────────────────────
 function initDropZones() {
   ;[['ccDropZone', 'ccMediaFile', 'ccUploadBar', 'ccUploadStatus', 'ccUploadProgress', 'ccUploadedUrl', 'ccDropText'],
@@ -1443,12 +1562,14 @@ function initDropZones() {
   })
 }
 document.addEventListener('DOMContentLoaded', initDropZones)
+document.addEventListener('DOMContentLoaded', () => {
+  if (!document.getElementById('ccButtonsContainer')?.children.length) addCcButtonRow('ccButtonsContainer')
+})
 
 async function addCustomCommand() {
   const trigger = document.getElementById('ccTrigger').value.trim()
   const response = document.getElementById('ccResponse').value.trim()
   const description = document.getElementById('ccDescription').value.trim()
-  const buttonsRaw = document.getElementById('ccButtons').value.trim()
   const category = normalizeCcCategory(document.getElementById('ccCategory').value)
   const mediaType = document.getElementById('ccMediaType').value
   const fileName = document.getElementById('ccFileName').value.trim()
@@ -1481,17 +1602,11 @@ async function addCustomCommand() {
   if (mediaType === 'url' && !mediaUrl) { showToast('Please enter a URL.', 'error'); return }
 
   let buttons = []
-  if (buttonsRaw) {
-    try {
-      buttons = JSON.parse(buttonsRaw)
-      if (!Array.isArray(buttons)) {
-        showToast('Buttons JSON must be an array.', 'error')
-        return
-      }
-    } catch (err) {
-      showToast('Buttons JSON is invalid.', 'error')
-      return
-    }
+  try {
+    buttons = collectCcButtons('ccButtonsContainer')
+  } catch (err) {
+    showToast(err.message || 'Invalid button configuration.', 'error')
+    return
   }
 
   try {
@@ -1509,12 +1624,13 @@ async function addCustomCommand() {
 
     if (res.success) {
       showToast(res.message)
-      ;['ccTrigger','ccResponse','ccDescription','ccButtons','ccMediaUrl','ccFileName','ccUploadedUrl'].forEach(id => { document.getElementById(id).value = '' })
+      ;['ccTrigger','ccResponse','ccDescription','ccMediaUrl','ccFileName','ccUploadedUrl'].forEach(id => { document.getElementById(id).value = '' })
       document.getElementById('ccCategory').value = 'General'
       document.getElementById('ccMediaType').value = ''
       document.getElementById('ccMediaFile').value = ''
       document.getElementById('ccUploadProgress').style.display = 'none'
       document.getElementById('ccDropText').style.display = ''
+      resetCcButtonRows('ccButtonsContainer')
       toggleMediaFields()
       loadCustomCommands()
     } else {
@@ -1537,11 +1653,13 @@ function openCcEditModal(trigger, response, description, category, mediaUrl, med
   document.getElementById('ccEditTriggerLabel').textContent = trigger
   document.getElementById('ccEditResponse').value = (response || '').replace(/\\n/g, '\n')
   document.getElementById('ccEditDescription').value = description || ''
+  let parsedButtons = []
   try {
-    document.getElementById('ccEditButtons').value = buttons ? JSON.stringify(JSON.parse(buttons), null, 2) : ''
+    parsedButtons = buttons ? JSON.parse(buttons) : []
   } catch (e) {
-    document.getElementById('ccEditButtons').value = buttons || ''
+    parsedButtons = []
   }
+  resetCcButtonRows('ccEditButtonsContainer', parsedButtons)
   const selectedCategory = normalizeCcCategory(category)
   const categorySelect = document.getElementById('ccEditCategory')
   if (![...categorySelect.options].some((opt) => opt.value === selectedCategory)) {
@@ -1579,7 +1697,6 @@ async function saveEditCustomCommand() {
   const trigger = document.getElementById('ccEditTrigger').value
   const response = document.getElementById('ccEditResponse').value.trim()
   const description = document.getElementById('ccEditDescription').value.trim()
-  const buttonsRaw = document.getElementById('ccEditButtons').value.trim()
   const category = normalizeCcCategory(document.getElementById('ccEditCategory').value)
   const mediaType = document.getElementById('ccEditMediaType').value
   const fileName = document.getElementById('ccEditFileName').value.trim()
@@ -1608,17 +1725,11 @@ async function saveEditCustomCommand() {
   if (!response && !mediaUrl) { showToast('Add a response text or attach media.', 'error'); return }
 
   let buttons = []
-  if (buttonsRaw) {
-    try {
-      buttons = JSON.parse(buttonsRaw)
-      if (!Array.isArray(buttons)) {
-        showToast('Buttons JSON must be an array.', 'error')
-        return
-      }
-    } catch (err) {
-      showToast('Buttons JSON is invalid.', 'error')
-      return
-    }
+  try {
+    buttons = collectCcButtons('ccEditButtonsContainer')
+  } catch (err) {
+    showToast(err.message || 'Invalid button configuration.', 'error')
+    return
   }
 
   try {
