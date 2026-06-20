@@ -228,6 +228,23 @@
             <option value="private">Private — Owner only</option>
           </select>
         </div>
+        <div class="form-group">
+          <label>Timezone <span style="color:var(--text-dim)">(popular list)</span></label>
+          <select id="timeZone">
+            <option value="Asia/Kuala_Lumpur">Asia/Kuala_Lumpur (MY)</option>
+            <option value="Asia/Jakarta">Asia/Jakarta (ID - WIB)</option>
+            <option value="Asia/Makassar">Asia/Makassar (ID - WITA)</option>
+            <option value="Asia/Jayapura">Asia/Jayapura (ID - WIT)</option>
+            <option value="Asia/Singapore">Asia/Singapore (SG)</option>
+            <option value="Asia/Bangkok">Asia/Bangkok (TH)</option>
+            <option value="Asia/Manila">Asia/Manila (PH)</option>
+            <option value="Asia/Tokyo">Asia/Tokyo (JP)</option>
+            <option value="Asia/Seoul">Asia/Seoul (KR)</option>
+            <option value="Europe/London">Europe/London (UK)</option>
+            <option value="America/New_York">America/New_York (US ET)</option>
+            <option value="UTC">UTC</option>
+          </select>
+        </div>
         <div style="margin-top:24px">
           <button class="btn btn-green" onclick="saveSettings()" style="width:100%">💾 Save Settings</button>
           <p style="font-size:12px;color:var(--text-dim);margin-top:8px;text-align:center">Restart the bot after saving for changes to take effect.</p>
@@ -683,6 +700,15 @@ async function loadSettings() {
     document.getElementById('botOwner').value = data.botOwner || ''
     document.getElementById('ownerNumber').value = data.ownerNumber || ''
     document.getElementById('commandMode').value = data.commandMode || 'public'
+    const tzSelect = document.getElementById('timeZone')
+    const currentTz = data.timeZone || 'Asia/Kuala_Lumpur'
+    if (![...tzSelect.options].some((opt) => opt.value === currentTz)) {
+      const customOpt = document.createElement('option')
+      customOpt.value = currentTz
+      customOpt.textContent = `${currentTz} (Current)`
+      tzSelect.appendChild(customOpt)
+    }
+    tzSelect.value = currentTz
     document.getElementById('packname').value = data.packname || ''
     document.getElementById('description').value = data.description || ''
   } catch(e) {}
@@ -694,6 +720,7 @@ async function saveSettings() {
     botOwner: document.getElementById('botOwner').value.trim(),
     ownerNumber: document.getElementById('ownerNumber').value.trim(),
     commandMode: document.getElementById('commandMode').value,
+    timeZone: document.getElementById('timeZone').value.trim(),
     packname: document.getElementById('packname').value.trim(),
     description: document.getElementById('description').value.trim(),
   }

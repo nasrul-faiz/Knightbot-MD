@@ -2,6 +2,7 @@ const express = require('express')
 const fs = require('fs')
 const path = require('path')
 const multer = require('multer')
+const moment = require('moment-timezone')
 const {
     listAllSchedules,
     addDailySchedule,
@@ -170,6 +171,7 @@ app.get('/api/settings', (req, res) => {
         botOwner: settings.botOwner,
         ownerNumber: settings.ownerNumber,
         commandMode: settings.commandMode,
+        timeZone: settings.timeZone,
         packname: settings.packname,
         author: settings.author,
         description: settings.description,
@@ -180,22 +182,30 @@ app.get('/api/settings', (req, res) => {
 // ── API: Settings POST ──────────────────────────────────────────────────────
 app.post('/api/settings', (req, res) => {
     try {
-        const { botName, botOwner, ownerNumber, commandMode, packname, description } = req.body
+        const { botName, botOwner, ownerNumber, commandMode, timeZone, packname, description } = req.body
         const settingsPath = path.join(__dirname, 'settings.js')
         let content = fs.readFileSync(settingsPath, 'utf8')
 
         const replace = (key, value) => {
-            const escaped = value.replace(/'/g, "\\'")
+            const escaped = String(value).replace(/\\/g, '\\\\').replace(/'/g, "\\'")
             content = content.replace(
-                new RegExp(`(${key}:\\s*")[^"]*(")|( ${key}:\\s*')[^']*(')`),
-                (match) => match.replace(/'[^']*'|"[^"]*"/, `'${escaped}'`)
+                new RegExp(`(${key}\\s*:\\s*)('(?:[^'\\\\]|\\\\.)*'|\"(?:[^\"\\\\]|\\\\.)*\")`),
+                `$1'${escaped}'`
             )
+        }
+
+        if (timeZone !== undefined) {
+            const tz = String(timeZone).trim()
+            if (!moment.tz.zone(tz)) {
+                return res.status(400).json({ success: false, error: 'Timezone tidak sah. Guna format IANA seperti Asia/Kuala_Lumpur.' })
+            }
         }
 
         if (botName !== undefined) replace('botName', botName)
         if (botOwner !== undefined) replace('botOwner', botOwner)
         if (ownerNumber !== undefined) replace('ownerNumber', ownerNumber)
         if (commandMode !== undefined) replace('commandMode', commandMode)
+        if (timeZone !== undefined) replace('timeZone', String(timeZone).trim())
         if (packname !== undefined) replace('packname', packname)
         if (description !== undefined) replace('description', description)
 

@@ -142,6 +142,7 @@ const { igsCommand } = require('./commands/igs');
 const { anticallCommand, readState: readAnticallState } = require('./commands/anticall');
 const { pmblockerCommand, readState: readPmBlockerState } = require('./commands/pmblocker');
 const settingsCommand = require('./commands/settings');
+const setTimezoneCommand = require('./commands/settimezone');
 const soraCommand = require('./commands/sora');
 const scheduleCommand = require('./commands/schedule');
 
@@ -324,7 +325,7 @@ async function handleMessages(sock, messageUpdate, printLog) {
         const isAdminCommand = adminCommands.some(cmd => userMessage.startsWith(cmd));
 
         // List of owner commands
-        const ownerCommands = ['.mode', '.autostatus', '.antidelete', '.cleartmp', '.setpp', '.clearsession', '.areact', '.autoreact', '.autotyping', '.autoread', '.pmblocker'];
+        const ownerCommands = ['.mode', '.autostatus', '.antidelete', '.cleartmp', '.setpp', '.clearsession', '.areact', '.autoreact', '.autotyping', '.autoread', '.pmblocker', '.settimezone', '.timezone'];
         const isOwnerCommand = ownerCommands.some(cmd => userMessage.startsWith(cmd));
 
         let isSenderAdmin = false;
@@ -448,6 +449,10 @@ async function handleMessages(sock, messageUpdate, printLog) {
 
             case userMessage === '.settings':
                 await settingsCommand(sock, chatId, message);
+                break;
+            case userMessage.startsWith('.settimezone') || userMessage.startsWith('.timezone'):
+                await setTimezoneCommand(sock, chatId, message, rawText);
+                commandExecuted = true;
                 break;
             case userMessage.startsWith('.mode'):
                 // Check if sender is the owner

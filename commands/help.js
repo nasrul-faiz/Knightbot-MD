@@ -84,6 +84,7 @@ async function helpCommand(sock, chatId, message) {
 ║ ➤ .anticall <on/off>
 ║ ➤ .pmblocker <on/off/status>
 ║ ➤ .pmblocker setmsg <text>
+║ ➤ .settimezone <IANA timezone>
 ║ ➤ .setmention <reply to msg>
 ║ ➤ .mention <on/off>
 ╚═══════════════════╝

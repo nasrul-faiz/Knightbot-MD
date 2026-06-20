@@ -1,4 +1,5 @@
 const fs = require('fs');
+const settings = require('../settings');
 
 function readJsonSafe(path, fallback) {
     try {
@@ -54,6 +55,7 @@ async function settingsCommand(sock, chatId, message) {
         lines.push(`• PM Blocker: ${pmblocker.enabled ? 'ON' : 'OFF'}`);
         lines.push(`• Anticall: ${anticall.enabled ? 'ON' : 'OFF'}`);
         lines.push(`• Auto Reaction: ${autoReaction ? 'ON' : 'OFF'}`);
+        lines.push(`• Timezone: ${settings.timeZone || 'UTC'}`);
         if (groupId) {
             lines.push('');
             lines.push(`Group: ${groupId}`);
