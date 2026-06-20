@@ -329,16 +329,38 @@ app.get('/api/custom-commands', (req, res) => {
     res.json(normalized)
 })
 
+function parseCustomCommandButtons(buttons) {
+    if (buttons == null || buttons === '') return undefined
+
+    let parsed = buttons
+    if (typeof parsed === 'string') {
+        const raw = parsed.trim()
+        if (!raw) return undefined
+        try {
+            parsed = JSON.parse(raw)
+        } catch (err) {
+            throw new Error('Buttons must be valid JSON.')
+        }
+    }
+
+    if (!Array.isArray(parsed)) {
+        throw new Error('Buttons must be a JSON array.')
+    }
+
+    return parsed
+}
+
 // ── API: Custom Commands POST (add) ──────────────────────────────────────────
 app.post('/api/custom-commands', (req, res) => {
     try {
-        const { trigger, response, description, category, mediaUrl, mediaType, fileName } = req.body
+        const { trigger, response, description, category, mediaUrl, mediaType, fileName, buttons } = req.body
         if (!trigger) return res.status(400).json({ success: false, error: 'Trigger is required.' })
         if (!response && !mediaUrl) return res.status(400).json({ success: false, error: 'At least a response text or media URL is required.' })
 
         const clean = trigger.trim().toLowerCase().replace(/\s+/g, '')
         if (!clean.startsWith('.')) return res.status(400).json({ success: false, error: 'Trigger must start with a dot (e.g. .hello)' })
 
+        const parsedButtons = parseCustomCommandButtons(buttons)
         const cmds = readJSON('./data/customCommands.json', [])
         if (cmds.find(c => c.trigger === clean)) return res.status(409).json({ success: false, error: `Command ${clean} already exists.` })
 
@@ -350,6 +372,7 @@ app.post('/api/custom-commands', (req, res) => {
         }
         if (mediaUrl && mediaUrl.trim()) { entry.mediaUrl = mediaUrl.trim(); entry.mediaType = (mediaType || 'image').trim() }
         if (fileName && fileName.trim()) entry.fileName = fileName.trim()
+        if (parsedButtons?.length) entry.buttons = parsedButtons
         cmds.push(entry)
         fs.writeFileSync('./data/customCommands.json', JSON.stringify(cmds, null, 2))
         res.json({ success: true, message: `Command ${clean} added!` })
@@ -362,9 +385,10 @@ app.post('/api/custom-commands', (req, res) => {
 app.put('/api/custom-commands/:trigger', (req, res) => {
     try {
         const key = decodeURIComponent(req.params.trigger).toLowerCase()
-        const { response, description, category, mediaUrl, mediaType, fileName } = req.body
+        const { response, description, category, mediaUrl, mediaType, fileName, buttons } = req.body
         if (!response && !mediaUrl) return res.status(400).json({ success: false, error: 'At least a response text or media URL is required.' })
 
+        const parsedButtons = parseCustomCommandButtons(buttons)
         const cmds = readJSON('./data/customCommands.json', [])
         const idx = cmds.findIndex(c => c.trigger === key)
         if (idx === -1) return res.status(404).json({ success: false, error: 'Command not found.' })
@@ -376,6 +400,8 @@ app.put('/api/custom-commands/:trigger', (req, res) => {
         else { delete cmds[idx].mediaUrl; delete cmds[idx].mediaType }
         if (fileName && fileName.trim()) cmds[idx].fileName = fileName.trim()
         else delete cmds[idx].fileName
+        if (parsedButtons?.length) cmds[idx].buttons = parsedButtons
+        else delete cmds[idx].buttons
         fs.writeFileSync('./data/customCommands.json', JSON.stringify(cmds, null, 2))
         res.json({ success: true, message: `Command ${key} updated!` })
     } catch (err) {

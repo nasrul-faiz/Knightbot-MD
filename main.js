@@ -165,6 +165,75 @@ const channelInfo = {
     }
 };
 
+function parseCustomButtonParams(button) {
+    const raw = button?.buttonParamsJson
+    if (!raw) return null
+
+    if (typeof raw === 'string') {
+        try {
+            return JSON.parse(raw)
+        } catch (_) {
+            return null
+        }
+    }
+
+    if (typeof raw === 'object') return raw
+    return null
+}
+
+function normalizeCustomCommandButtons(buttons) {
+    if (!Array.isArray(buttons) || !buttons.length) return { buttons: null, templateButtons: null }
+
+    const templateButtons = []
+    const legacyButtons = []
+
+    for (const button of buttons) {
+        if (!button || typeof button !== 'object') continue
+
+        if (button.quickReplyButton) {
+            templateButtons.push({ quickReplyButton: button.quickReplyButton })
+            continue
+        }
+        if (button.urlButton) {
+            templateButtons.push({ urlButton: button.urlButton })
+            continue
+        }
+        if (button.callButton) {
+            templateButtons.push({ callButton: button.callButton })
+            continue
+        }
+
+        if (button.name === 'quick_reply' || button.buttonParamsJson || button.buttonId || button.buttonText) {
+            const params = parseCustomButtonParams(button) || {}
+            const displayText = params.display_text || params.displayText || button.buttonText?.displayText || params.title || button.title || 'Button'
+            const buttonId = params.id || params.buttonId || button.buttonId || displayText
+            templateButtons.push({ quickReplyButton: { displayText, id: buttonId } })
+            legacyButtons.push({ buttonId, buttonText: { displayText }, type: 1 })
+            continue
+        }
+
+        if (button.name === 'url') {
+            const params = parseCustomButtonParams(button) || {}
+            const displayText = params.display_text || params.displayText || 'Open Link'
+            const url = params.url || params.link
+            if (url) templateButtons.push({ urlButton: { displayText, url } })
+            continue
+        }
+
+        if (button.name === 'call') {
+            const params = parseCustomButtonParams(button) || {}
+            const displayText = params.display_text || params.displayText || 'Call'
+            const phoneNumber = params.phone_number || params.phoneNumber
+            if (phoneNumber) templateButtons.push({ callButton: { displayText, phoneNumber } })
+        }
+    }
+
+    return {
+        templateButtons: templateButtons.length ? templateButtons : null,
+        buttons: legacyButtons.length ? legacyButtons : null
+    }
+}
+
 async function handleMessages(sock, messageUpdate, printLog) {
     try {
         const { messages, type } = messageUpdate;
@@ -1204,30 +1273,43 @@ async function handleMessages(sock, messageUpdate, printLog) {
                     });
                     if (matched) {
                         const caption = (matched.response || '').replace(/\\n/g, '\n');
+                        const customButtons = normalizeCustomCommandButtons(matched.buttons);
                         const sendMedia = async () => {
                             if (matched.mediaUrl && matched.mediaType) {
                                 const mt = matched.mediaType;
                                 if (mt === 'url') {
                                     const txt = caption ? `${caption}\n${matched.mediaUrl}` : matched.mediaUrl;
-                                    await sock.sendMessage(chatId, { text: txt }, { quoted: message });
+                                    const payload = { text: txt };
+                                    if (customButtons.templateButtons) payload.templateButtons = customButtons.templateButtons;
+                                    if (customButtons.buttons) payload.buttons = customButtons.buttons;
+                                    if (customButtons.templateButtons || customButtons.buttons) payload.headerType = 1;
+                                    await sock.sendMessage(chatId, payload, { quoted: message });
                                 } else {
                                     const isLocal = matched.mediaUrl.startsWith('/uploads/');
                                     const mediaSrc = isLocal
                                         ? fs.readFileSync(path.join(__dirname, 'public', matched.mediaUrl))
                                         : { url: matched.mediaUrl };
                                     const displayName = matched.fileName || (isLocal ? path.basename(matched.mediaUrl) : 'file');
+                                    const payload = { caption };
+                                    if (customButtons.templateButtons) payload.templateButtons = customButtons.templateButtons;
+                                    if (customButtons.buttons) payload.buttons = customButtons.buttons;
+                                    if (customButtons.templateButtons || customButtons.buttons) payload.headerType = 1;
                                     if (mt === 'image') {
-                                        await sock.sendMessage(chatId, { image: mediaSrc, caption }, { quoted: message });
+                                        await sock.sendMessage(chatId, { image: mediaSrc, ...payload }, { quoted: message });
                                     } else if (mt === 'video') {
-                                        await sock.sendMessage(chatId, { video: mediaSrc, caption }, { quoted: message });
+                                        await sock.sendMessage(chatId, { video: mediaSrc, ...payload }, { quoted: message });
                                     } else if (mt === 'audio') {
-                                        await sock.sendMessage(chatId, { audio: mediaSrc, mimetype: 'audio/mpeg', ptt: false }, { quoted: message });
+                                        await sock.sendMessage(chatId, { audio: mediaSrc, mimetype: 'audio/mpeg', ptt: false, ...payload }, { quoted: message });
                                     } else if (mt === 'document') {
-                                        await sock.sendMessage(chatId, { document: mediaSrc, fileName: displayName, mimetype: 'application/octet-stream', caption }, { quoted: message });
+                                        await sock.sendMessage(chatId, { document: mediaSrc, fileName: displayName, mimetype: 'application/octet-stream', ...payload }, { quoted: message });
                                     }
                                 }
                             } else if (caption) {
-                                await sock.sendMessage(chatId, { text: caption }, { quoted: message });
+                                const payload = { text: caption };
+                                if (customButtons.templateButtons) payload.templateButtons = customButtons.templateButtons;
+                                if (customButtons.buttons) payload.buttons = customButtons.buttons;
+                                if (customButtons.templateButtons || customButtons.buttons) payload.headerType = 1;
+                                await sock.sendMessage(chatId, payload, { quoted: message });
                             }
                         };
                         try {
