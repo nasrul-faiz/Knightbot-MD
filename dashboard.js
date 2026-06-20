@@ -98,6 +98,12 @@ function getTotalMessagesForChat(messageCount, chatId) {
     return 0
 }
 
+function normalizeCommandCategory(value) {
+    const raw = String(value || '').trim();
+    if (!raw) return 'General';
+    return raw.slice(0, 32);
+}
+
 // ── API: Bot status ─────────────────────────────────────────────────────────
 app.get('/api/status', (req, res) => {
     const creds = readJSON('./session/creds.json')
@@ -314,13 +320,19 @@ app.post('/api/upload-media', upload.single('file'), (req, res) => {
 // ── API: Custom Commands GET ─────────────────────────────────────────────────
 app.get('/api/custom-commands', (req, res) => {
     const cmds = readJSON('./data/customCommands.json', [])
-    res.json(Array.isArray(cmds) ? cmds : [])
+    if (!Array.isArray(cmds)) return res.json([])
+
+    const normalized = cmds.map((cmd) => ({
+        ...cmd,
+        category: normalizeCommandCategory(cmd.category)
+    }))
+    res.json(normalized)
 })
 
 // ── API: Custom Commands POST (add) ──────────────────────────────────────────
 app.post('/api/custom-commands', (req, res) => {
     try {
-        const { trigger, response, description, mediaUrl, mediaType, fileName } = req.body
+        const { trigger, response, description, category, mediaUrl, mediaType, fileName } = req.body
         if (!trigger) return res.status(400).json({ success: false, error: 'Trigger is required.' })
         if (!response && !mediaUrl) return res.status(400).json({ success: false, error: 'At least a response text or media URL is required.' })
 
@@ -330,7 +342,12 @@ app.post('/api/custom-commands', (req, res) => {
         const cmds = readJSON('./data/customCommands.json', [])
         if (cmds.find(c => c.trigger === clean)) return res.status(409).json({ success: false, error: `Command ${clean} already exists.` })
 
-        const entry = { trigger: clean, response: (response || '').trim(), description: (description || '').trim() }
+        const entry = {
+            trigger: clean,
+            response: (response || '').trim(),
+            description: (description || '').trim(),
+            category: normalizeCommandCategory(category)
+        }
         if (mediaUrl && mediaUrl.trim()) { entry.mediaUrl = mediaUrl.trim(); entry.mediaType = (mediaType || 'image').trim() }
         if (fileName && fileName.trim()) entry.fileName = fileName.trim()
         cmds.push(entry)
@@ -345,7 +362,7 @@ app.post('/api/custom-commands', (req, res) => {
 app.put('/api/custom-commands/:trigger', (req, res) => {
     try {
         const key = decodeURIComponent(req.params.trigger).toLowerCase()
-        const { response, description, mediaUrl, mediaType, fileName } = req.body
+        const { response, description, category, mediaUrl, mediaType, fileName } = req.body
         if (!response && !mediaUrl) return res.status(400).json({ success: false, error: 'At least a response text or media URL is required.' })
 
         const cmds = readJSON('./data/customCommands.json', [])
@@ -354,6 +371,7 @@ app.put('/api/custom-commands/:trigger', (req, res) => {
 
         cmds[idx].response = (response || '').trim()
         cmds[idx].description = (description || '').trim()
+        cmds[idx].category = normalizeCommandCategory(category)
         if (mediaUrl && mediaUrl.trim()) { cmds[idx].mediaUrl = mediaUrl.trim(); cmds[idx].mediaType = (mediaType || 'image').trim() }
         else { delete cmds[idx].mediaUrl; delete cmds[idx].mediaType }
         if (fileName && fileName.trim()) cmds[idx].fileName = fileName.trim()

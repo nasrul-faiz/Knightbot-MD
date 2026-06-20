@@ -378,6 +378,19 @@
           <label>Description <span style="color:var(--text-dim)">(optional)</span></label>
           <input type="text" id="ccDescription" placeholder="Greeting command" />
         </div>
+        <div class="form-group">
+          <label>Category</label>
+          <select id="ccCategory">
+            <option value="General">General</option>
+            <option value="Greeting">Greeting</option>
+            <option value="Info">Info</option>
+            <option value="Utility">Utility</option>
+            <option value="Fun">Fun</option>
+            <option value="Media">Media</option>
+            <option value="Moderation">Moderation</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
         <div style="border-top:1px solid var(--border);margin:16px 0 14px;padding-top:14px">
           <div style="font-size:12px;font-weight:600;color:var(--text-dim);margin-bottom:12px;text-transform:uppercase;letter-spacing:.05em">📎 Media Attachment (optional)</div>
           <div class="form-group">
@@ -429,17 +442,12 @@
       <div class="card" style="display:flex;flex-direction:column;gap:12px">
         <div class="card-title">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          How It Works
+          Custom Command Guide
         </div>
         <div style="font-size:13px;color:var(--text-dim);line-height:1.7">
-          <b style="color:var(--text)">Trigger</b> — the command someone types in WhatsApp (e.g. <code style="background:var(--surface2);padding:1px 6px;border-radius:3px">.hello</code>)<br><br>
-          <b style="color:var(--text)">Response</b> — what the bot replies with. Supports any text, emojis ✅<br><br>
-          <b style="color:var(--text)">Works in</b> — both groups and private chats<br><br>
-          <b style="color:var(--text)">Priority</b> — custom commands run after all built-in commands, so they won't override existing ones.
+          Open panduan untuk lihat cara trigger, response, media, dan tips penggunaan custom command.
         </div>
-        <div style="background:var(--surface2);border-radius:8px;padding:12px;font-size:12px;color:var(--text-dim)">
-          💡 <b>Tip:</b> Use <code style="background:var(--bg);padding:1px 5px;border-radius:3px">\n</code> in your response for line breaks. Example: <code style="background:var(--bg);padding:1px 5px;border-radius:3px">Line 1\nLine 2</code>
-        </div>
+        <button class="btn btn-outline" onclick="openCcGuideModal()">📘 How It Works</button>
         <div id="ccStats" style="font-size:13px;color:var(--text-dim);padding:10px;background:var(--surface2);border-radius:8px;text-align:center"></div>
       </div>
     </div>
@@ -468,6 +476,19 @@
         <div class="form-group">
           <label>Description <span style="color:var(--text-dim)">(optional)</span></label>
           <input type="text" id="ccEditDescription" />
+        </div>
+        <div class="form-group">
+          <label>Category</label>
+          <select id="ccEditCategory">
+            <option value="General">General</option>
+            <option value="Greeting">Greeting</option>
+            <option value="Info">Info</option>
+            <option value="Utility">Utility</option>
+            <option value="Fun">Fun</option>
+            <option value="Media">Media</option>
+            <option value="Moderation">Moderation</option>
+            <option value="Other">Other</option>
+          </select>
         </div>
         <div style="border-top:1px solid var(--border);margin:14px 0 12px;padding-top:12px">
           <div style="font-size:12px;font-weight:600;color:var(--text-dim);margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em">📎 Media Attachment</div>
@@ -514,6 +535,26 @@
         <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
           <button class="btn btn-outline" onclick="closeCcEditModal()">Cancel</button>
           <button class="btn btn-green" onclick="saveEditCustomCommand()">💾 Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- How It Works Modal -->
+    <div id="ccGuideModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:210;align-items:center;justify-content:center;overflow-y:auto" onclick="if(event.target===this) closeCcGuideModal()">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;max-width:560px;width:92%;margin:auto">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px">
+          <div style="font-size:16px;font-weight:700">📘 How Custom Commands Work</div>
+          <button class="btn btn-outline btn-sm" onclick="closeCcGuideModal()">✕ Close</button>
+        </div>
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.7">
+          <b style="color:var(--text)">Trigger</b> — command yang user taip di WhatsApp. Contoh: <code style="background:var(--surface2);padding:1px 6px;border-radius:3px">.hello</code><br><br>
+          <b style="color:var(--text)">Response</b> — mesej balasan bot (boleh teks, emoji, caption media).<br><br>
+          <b style="color:var(--text)">Category</b> — untuk susun command dalam dashboard (General, Fun, Utility, dll).<br><br>
+          <b style="color:var(--text)">Works in</b> — group dan private chat.<br><br>
+          <b style="color:var(--text)">Priority</b> — custom command jalan selepas built-in command, jadi tak override command asal bot.
+        </div>
+        <div style="background:var(--surface2);border-radius:8px;padding:12px;font-size:12px;color:var(--text-dim);margin-top:12px">
+          💡 <b>Tip:</b> guna <code style="background:var(--bg);padding:1px 5px;border-radius:3px">\n</code> untuk line break. Contoh: <code style="background:var(--bg);padding:1px 5px;border-radius:3px">Line 1\nLine 2</code>
         </div>
       </div>
     </div>
@@ -1202,6 +1243,19 @@ async function doReset() {
 }
 
 // ── Custom Commands ───────────────────────────────────────────────────────────
+function normalizeCcCategory(category) {
+  const raw = String(category || '').trim()
+  return raw || 'General'
+}
+
+function openCcGuideModal() {
+  document.getElementById('ccGuideModal').style.display = 'flex'
+}
+
+function closeCcGuideModal() {
+  document.getElementById('ccGuideModal').style.display = 'none'
+}
+
 async function loadCustomCommands() {
   try {
     const cmds = await fetch('/api/custom-commands').then(r => r.json())
@@ -1214,39 +1268,55 @@ async function loadCustomCommands() {
       return
     }
 
-    const mediaIcon = { image: '🖼️', video: '🎬', audio: '🎵', document: '📄' }
-    el.innerHTML = `
-      <div style="overflow-x:auto">
-        <table style="width:100%;border-collapse:collapse;font-size:13px">
-          <thead>
-            <tr style="border-bottom:1px solid var(--border)">
-              <th style="text-align:left;padding:8px 12px;color:var(--text-dim);font-weight:600;white-space:nowrap">Trigger</th>
-              <th style="text-align:left;padding:8px 12px;color:var(--text-dim);font-weight:600">Response / Media</th>
-              <th style="text-align:left;padding:8px 12px;color:var(--text-dim);font-weight:600">Description</th>
-              <th style="padding:8px 12px;color:var(--text-dim);font-weight:600;white-space:nowrap">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${cmds.map(c => {
-              const mediaBadge = c.mediaType ? `<span class="badge badge-blue" style="margin-left:6px;font-size:11px">${mediaIcon[c.mediaType]||'📎'} ${c.mediaType}</span>` : ''
-              const responseText = c.response ? escapeHtml(c.response.substring(0,60)) + (c.response.length>60?'…':'') : '<span style="color:var(--text-dim);font-style:italic">—</span>'
-              return `
-              <tr style="border-bottom:1px solid rgba(48,54,61,.4)">
-                <td style="padding:10px 12px;white-space:nowrap">
-                  <code style="background:var(--surface2);padding:2px 8px;border-radius:4px;color:var(--green);font-size:12px">${escapeHtml(c.trigger)}</code>
-                </td>
-                <td style="padding:10px 12px;max-width:260px">${responseText}${mediaBadge}</td>
-                <td style="padding:10px 12px;color:var(--text-dim)">${escapeHtml(c.description || '—')}</td>
-                <td style="padding:10px 12px;text-align:right;white-space:nowrap">
-                  <button class="btn btn-outline btn-sm" onclick="openCcEditModal('${escapeHtml(c.trigger)}','${escapeAttr(c.response||'')}','${escapeAttr(c.description||'')}','${escapeAttr(c.mediaUrl||'')}','${escapeAttr(c.mediaType||'')}','${escapeAttr(c.fileName||'')}')" style="margin-right:6px">✏️ Edit</button>
-                  <button class="btn btn-sm" style="background:rgba(248,81,73,.15);color:var(--red);border:1px solid rgba(248,81,73,.4)" onclick="deleteCustomCommand('${escapeHtml(c.trigger)}')">🗑️ Delete</button>
-                </td>
-              </tr>`
-            }).join('')}
-          </tbody>
-        </table>
-      </div>
-    `
+    const mediaIcon = { image: '🖼️', video: '🎬', audio: '🎵', document: '📄', url: '🔗' }
+    const grouped = cmds.reduce((acc, cmd) => {
+      const key = normalizeCcCategory(cmd.category)
+      if (!acc[key]) acc[key] = []
+      acc[key].push(cmd)
+      return acc
+    }, {})
+    const categories = Object.keys(grouped).sort((a, b) => a.localeCompare(b))
+
+    el.innerHTML = categories.map((category) => {
+      const rows = grouped[category].map(c => {
+        const mediaBadge = c.mediaType ? `<span class="badge badge-blue" style="margin-left:6px;font-size:11px">${mediaIcon[c.mediaType]||'📎'} ${c.mediaType}</span>` : ''
+        const responseText = c.response ? escapeHtml(c.response.substring(0,60)) + (c.response.length>60?'…':'') : '<span style="color:var(--text-dim);font-style:italic">—</span>'
+        return `
+          <tr style="border-bottom:1px solid rgba(48,54,61,.4)">
+            <td style="padding:10px 12px;white-space:nowrap">
+              <code style="background:var(--surface2);padding:2px 8px;border-radius:4px;color:var(--green);font-size:12px">${escapeHtml(c.trigger)}</code>
+            </td>
+            <td style="padding:10px 12px;max-width:260px">${responseText}${mediaBadge}</td>
+            <td style="padding:10px 12px;color:var(--text-dim)">${escapeHtml(c.description || '—')}</td>
+            <td style="padding:10px 12px;text-align:right;white-space:nowrap">
+              <button class="btn btn-outline btn-sm" onclick="openCcEditModal('${escapeHtml(c.trigger)}','${escapeAttr(c.response||'')}','${escapeAttr(c.description||'')}','${escapeAttr(c.category||'General')}','${escapeAttr(c.mediaUrl||'')}','${escapeAttr(c.mediaType||'')}','${escapeAttr(c.fileName||'')}')" style="margin-right:6px">✏️ Edit</button>
+              <button class="btn btn-sm" style="background:rgba(248,81,73,.15);color:var(--red);border:1px solid rgba(248,81,73,.4)" onclick="deleteCustomCommand('${escapeHtml(c.trigger)}')">🗑️ Delete</button>
+            </td>
+          </tr>`
+      }).join('')
+
+      return `
+        <div style="margin-bottom:14px;border:1px solid var(--border);border-radius:10px;overflow:hidden">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--surface2)">
+            <span style="font-size:13px;font-weight:700">📁 ${escapeHtml(category)}</span>
+            <span class="badge badge-yellow">${grouped[category].length} command${grouped[category].length !== 1 ? 's' : ''}</span>
+          </div>
+          <div style="overflow-x:auto">
+            <table style="width:100%;border-collapse:collapse;font-size:13px">
+              <thead>
+                <tr style="border-bottom:1px solid var(--border)">
+                  <th style="text-align:left;padding:8px 12px;color:var(--text-dim);font-weight:600;white-space:nowrap">Trigger</th>
+                  <th style="text-align:left;padding:8px 12px;color:var(--text-dim);font-weight:600">Response / Media</th>
+                  <th style="text-align:left;padding:8px 12px;color:var(--text-dim);font-weight:600">Description</th>
+                  <th style="padding:8px 12px;color:var(--text-dim);font-weight:600;white-space:nowrap">Actions</th>
+                </tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        </div>
+      `
+    }).join('')
   } catch(e) {
     document.getElementById('ccList').innerHTML = '<p style="color:var(--red);font-size:13px">Failed to load commands.</p>'
   }
@@ -1368,6 +1438,7 @@ async function addCustomCommand() {
   const trigger = document.getElementById('ccTrigger').value.trim()
   const response = document.getElementById('ccResponse').value.trim()
   const description = document.getElementById('ccDescription').value.trim()
+  const category = normalizeCcCategory(document.getElementById('ccCategory').value)
   const mediaType = document.getElementById('ccMediaType').value
   const fileName = document.getElementById('ccFileName').value.trim()
 
@@ -1399,7 +1470,7 @@ async function addCustomCommand() {
   if (mediaType === 'url' && !mediaUrl) { showToast('Please enter a URL.', 'error'); return }
 
   try {
-    const payload = { trigger, response, description }
+    const payload = { trigger, response, description, category }
     if (mediaType && mediaUrl) { payload.mediaUrl = mediaUrl; payload.mediaType = mediaType }
     if (mediaType === 'url' && mediaUrl) { payload.mediaUrl = mediaUrl; payload.mediaType = 'url' }
     if (fileName) payload.fileName = fileName
@@ -1413,6 +1484,7 @@ async function addCustomCommand() {
     if (res.success) {
       showToast(res.message)
       ;['ccTrigger','ccResponse','ccDescription','ccMediaUrl','ccFileName','ccUploadedUrl'].forEach(id => { document.getElementById(id).value = '' })
+      document.getElementById('ccCategory').value = 'General'
       document.getElementById('ccMediaType').value = ''
       document.getElementById('ccMediaFile').value = ''
       document.getElementById('ccUploadProgress').style.display = 'none'
@@ -1434,11 +1506,20 @@ async function deleteCustomCommand(trigger) {
   } catch(e) { showToast('Network error', 'error') }
 }
 
-function openCcEditModal(trigger, response, description, mediaUrl, mediaType, fileName) {
+function openCcEditModal(trigger, response, description, category, mediaUrl, mediaType, fileName) {
   document.getElementById('ccEditTrigger').value = trigger
   document.getElementById('ccEditTriggerLabel').textContent = trigger
   document.getElementById('ccEditResponse').value = (response || '').replace(/\\n/g, '\n')
   document.getElementById('ccEditDescription').value = description || ''
+  const selectedCategory = normalizeCcCategory(category)
+  const categorySelect = document.getElementById('ccEditCategory')
+  if (![...categorySelect.options].some((opt) => opt.value === selectedCategory)) {
+    const customOpt = document.createElement('option')
+    customOpt.value = selectedCategory
+    customOpt.textContent = `${selectedCategory} (Current)`
+    categorySelect.appendChild(customOpt)
+  }
+  categorySelect.value = selectedCategory
   document.getElementById('ccEditMediaType').value = mediaType || ''
   document.getElementById('ccEditFileName').value = fileName || ''
   // If existing media is a local upload, show it in the upload slot; else put it in URL
@@ -1467,6 +1548,7 @@ async function saveEditCustomCommand() {
   const trigger = document.getElementById('ccEditTrigger').value
   const response = document.getElementById('ccEditResponse').value.trim()
   const description = document.getElementById('ccEditDescription').value.trim()
+  const category = normalizeCcCategory(document.getElementById('ccEditCategory').value)
   const mediaType = document.getElementById('ccEditMediaType').value
   const fileName = document.getElementById('ccEditFileName').value.trim()
 
@@ -1494,7 +1576,7 @@ async function saveEditCustomCommand() {
   if (!response && !mediaUrl) { showToast('Add a response text or attach media.', 'error'); return }
 
   try {
-    const payload = { response, description }
+    const payload = { response, description, category }
     if (mediaType && mediaUrl) { payload.mediaUrl = mediaUrl; payload.mediaType = mediaType }
     if (fileName) payload.fileName = fileName
 
