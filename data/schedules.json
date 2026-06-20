@@ -1,0 +1,13 @@
+[
+  {
+    "id": 1,
+    "chatId": "chat-test",
+    "message": "ujian",
+    "type": "once",
+    "date": "2026-06-21",
+    "time": "08:30",
+    "nextRunAt": 1782001800000,
+    "createdBy": "tester",
+    "createdAt": 1781939886979
+  }
+]
