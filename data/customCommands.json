@@ -1,1 +1,22 @@
-[]
+[
+	{
+		"trigger": ".button",
+		"response": "🤖 Demo button (wabase-button style)\nPilih salah satu butang di bawah:",
+		"description": "Demo interactive buttons adapted from wabase-button",
+		"category": "General",
+		"buttons": [
+			{
+				"name": "quick_reply",
+				"buttonParamsJson": "{\"display_text\":\"Menu\",\"id\":\".help\"}"
+			},
+			{
+				"name": "cta_url",
+				"buttonParamsJson": "{\"display_text\":\"GitHub\",\"url\":\"https://github.com/atex-ovi/wabase-button.git\",\"merchant_url\":\"https://github.com/atex-ovi/wabase-button.git\"}"
+			},
+			{
+				"name": "cta_call",
+				"buttonParamsJson": "{\"display_text\":\"Call Owner\",\"phone_number\":\"6281234567890\"}"
+			}
+		]
+	}
+]

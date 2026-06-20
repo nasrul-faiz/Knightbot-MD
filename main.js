@@ -187,9 +187,38 @@ function normalizeCustomCommandButtons(buttons) {
 
     const templateButtons = []
     const legacyButtons = []
+    const passthroughNativeButtons = []
 
     for (const button of buttons) {
         if (!button || typeof button !== 'object') continue
+
+        // Keep full native flow button payloads (wabase-button style)
+        if (button.name && button.buttonParamsJson) {
+            passthroughNativeButtons.push({
+                name: String(button.name),
+                buttonParamsJson: typeof button.buttonParamsJson === 'string'
+                    ? button.buttonParamsJson
+                    : JSON.stringify(button.buttonParamsJson)
+            })
+
+            // Build template/legacy fallback for common button types
+            const params = parseCustomButtonParams(button) || {}
+            if (button.name === 'quick_reply') {
+                const displayText = params.display_text || params.displayText || 'Button'
+                const buttonId = params.id || params.buttonId || displayText
+                templateButtons.push(button.index ? { index: button.index, quickReplyButton: { displayText, id: buttonId } } : { quickReplyButton: { displayText, id: buttonId } })
+                legacyButtons.push({ buttonId, buttonText: { displayText }, type: 1 })
+            } else if (button.name === 'cta_url') {
+                const displayText = params.display_text || params.displayText || 'Open Link'
+                const url = params.url || params.link || params.merchant_url
+                if (url) templateButtons.push(button.index ? { index: button.index, urlButton: { displayText, url } } : { urlButton: { displayText, url } })
+            } else if (button.name === 'cta_call') {
+                const displayText = params.display_text || params.displayText || 'Call'
+                const phoneNumber = params.phone_number || params.phoneNumber || params.id
+                if (phoneNumber) templateButtons.push(button.index ? { index: button.index, callButton: { displayText, phoneNumber } } : { callButton: { displayText, phoneNumber } })
+            }
+            continue
+        }
 
         if (button.quickReplyButton) {
             templateButtons.push(button.index ? { index: button.index, quickReplyButton: button.quickReplyButton } : { quickReplyButton: button.quickReplyButton })
@@ -239,7 +268,7 @@ function normalizeCustomCommandButtons(buttons) {
         }
     }
 
-    const nativeButtons = []
+    const nativeButtons = [...passthroughNativeButtons]
     for (const button of templateButtons) {
         if (button.quickReplyButton?.id) {
             nativeButtons.push({
@@ -267,7 +296,7 @@ function normalizeCustomCommandButtons(buttons) {
                 name: 'cta_call',
                 buttonParamsJson: JSON.stringify({
                     display_text: button.callButton.displayText || 'Call',
-                    id: String(button.callButton.phoneNumber)
+                    phone_number: String(button.callButton.phoneNumber)
                 })
             })
         }
