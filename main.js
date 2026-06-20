@@ -145,6 +145,7 @@ const settingsCommand = require('./commands/settings');
 const setTimezoneCommand = require('./commands/settimezone');
 const soraCommand = require('./commands/sora');
 const scheduleCommand = require('./commands/schedule');
+const { sendInteractiveButtons, extractInteractiveResponseId } = require('./lib/interactiveButtons');
 
 // Global settings
 global.packname = settings.packname;
@@ -182,7 +183,7 @@ function parseCustomButtonParams(button) {
 }
 
 function normalizeCustomCommandButtons(buttons) {
-    if (!Array.isArray(buttons) || !buttons.length) return { buttons: null, templateButtons: null }
+    if (!Array.isArray(buttons) || !buttons.length) return { buttons: null, templateButtons: null, nativeButtons: null }
 
     const templateButtons = []
     const legacyButtons = []
@@ -238,9 +239,44 @@ function normalizeCustomCommandButtons(buttons) {
         }
     }
 
+    const nativeButtons = []
+    for (const button of templateButtons) {
+        if (button.quickReplyButton?.id) {
+            nativeButtons.push({
+                name: 'quick_reply',
+                buttonParamsJson: JSON.stringify({
+                    display_text: button.quickReplyButton.displayText || 'Button',
+                    id: button.quickReplyButton.id
+                })
+            })
+            continue
+        }
+        if (button.urlButton?.url) {
+            nativeButtons.push({
+                name: 'cta_url',
+                buttonParamsJson: JSON.stringify({
+                    display_text: button.urlButton.displayText || 'Open Link',
+                    url: button.urlButton.url,
+                    merchant_url: button.urlButton.url
+                })
+            })
+            continue
+        }
+        if (button.callButton?.phoneNumber) {
+            nativeButtons.push({
+                name: 'cta_call',
+                buttonParamsJson: JSON.stringify({
+                    display_text: button.callButton.displayText || 'Call',
+                    id: String(button.callButton.phoneNumber)
+                })
+            })
+        }
+    }
+
     return {
         templateButtons: templateButtons.length ? templateButtons : null,
-        buttons: legacyButtons.length ? legacyButtons : null
+        buttons: legacyButtons.length ? legacyButtons : null,
+        nativeButtons: nativeButtons.length ? nativeButtons : null
     }
 }
 
@@ -273,8 +309,9 @@ async function handleMessages(sock, messageUpdate, printLog) {
         const senderIsOwnerOrSudo = await isOwnerOrSudo(senderId, sock, chatId);
 
         // Handle button responses
-        if (message.message?.buttonsResponseMessage) {
-            const buttonId = message.message.buttonsResponseMessage.selectedButtonId;
+        const interactiveButtonId = extractInteractiveResponseId(message);
+        if (interactiveButtonId) {
+            const buttonId = interactiveButtonId;
             const chatId = message.key.remoteJid;
 
             if (buttonId === 'channel') {
@@ -299,7 +336,7 @@ async function handleMessages(sock, messageUpdate, printLog) {
             message.message?.extendedTextMessage?.text?.trim() ||
             message.message?.imageMessage?.caption?.trim() ||
             message.message?.videoMessage?.caption?.trim() ||
-            message.message?.buttonsResponseMessage?.selectedButtonId?.trim() ||
+            interactiveButtonId?.trim() ||
             ''
         ).toLowerCase().replace(/\.\s+/g, '.').trim();
 
@@ -1289,11 +1326,14 @@ async function handleMessages(sock, messageUpdate, printLog) {
                                 const mt = matched.mediaType;
                                 if (mt === 'url') {
                                     const txt = caption ? `${caption}\n${matched.mediaUrl}` : matched.mediaUrl;
-                                    const payload = { text: txt };
-                                    if (customButtons.templateButtons) payload.templateButtons = customButtons.templateButtons;
-                                    if (customButtons.buttons) payload.buttons = customButtons.buttons;
-                                    if (customButtons.templateButtons || customButtons.buttons) payload.headerType = 1;
-                                    await sock.sendMessage(chatId, payload, { quoted: message });
+                                    if (customButtons.nativeButtons) {
+                                        await sendInteractiveButtons(sock, chatId, {
+                                            text: txt,
+                                            nativeButtons: customButtons.nativeButtons
+                                        }, { quoted: message });
+                                    } else {
+                                        await sock.sendMessage(chatId, { text: txt }, { quoted: message });
+                                    }
                                 } else {
                                     const isLocal = matched.mediaUrl.startsWith('/uploads/');
                                     const mediaSrc = isLocal
@@ -1301,9 +1341,6 @@ async function handleMessages(sock, messageUpdate, printLog) {
                                         : { url: matched.mediaUrl };
                                     const displayName = matched.fileName || (isLocal ? path.basename(matched.mediaUrl) : 'file');
                                     const payload = { caption };
-                                    if (customButtons.templateButtons) payload.templateButtons = customButtons.templateButtons;
-                                    if (customButtons.buttons) payload.buttons = customButtons.buttons;
-                                    if (customButtons.templateButtons || customButtons.buttons) payload.headerType = 1;
                                     if (mt === 'image') {
                                         await sock.sendMessage(chatId, { image: mediaSrc, ...payload }, { quoted: message });
                                     } else if (mt === 'video') {
@@ -1313,13 +1350,23 @@ async function handleMessages(sock, messageUpdate, printLog) {
                                     } else if (mt === 'document') {
                                         await sock.sendMessage(chatId, { document: mediaSrc, fileName: displayName, mimetype: 'application/octet-stream', ...payload }, { quoted: message });
                                     }
+
+                                    if (customButtons.nativeButtons) {
+                                        await sendInteractiveButtons(sock, chatId, {
+                                            text: caption || 'Choose an option:',
+                                            nativeButtons: customButtons.nativeButtons
+                                        }, { quoted: message });
+                                    }
                                 }
                             } else if (caption) {
-                                const payload = { text: caption };
-                                if (customButtons.templateButtons) payload.templateButtons = customButtons.templateButtons;
-                                if (customButtons.buttons) payload.buttons = customButtons.buttons;
-                                if (customButtons.templateButtons || customButtons.buttons) payload.headerType = 1;
-                                await sock.sendMessage(chatId, payload, { quoted: message });
+                                if (customButtons.nativeButtons) {
+                                    await sendInteractiveButtons(sock, chatId, {
+                                        text: caption,
+                                        nativeButtons: customButtons.nativeButtons
+                                    }, { quoted: message });
+                                } else {
+                                    await sock.sendMessage(chatId, { text: caption }, { quoted: message });
+                                }
                             }
                         };
                         try {

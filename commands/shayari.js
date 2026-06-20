@@ -1,4 +1,5 @@
 const fetch = require('node-fetch');
+const { sendInteractiveButtons } = require('../lib/interactiveButtons');
 
 async function shayariCommand(sock, chatId, message) {
     try {
@@ -9,15 +10,24 @@ async function shayariCommand(sock, chatId, message) {
             throw new Error('Invalid response from API');
         }
 
-        const buttons = [
-            { buttonId: '.shayari', buttonText: { displayText: 'Shayari 🪄' }, type: 1 },
-            { buttonId: '.roseday', buttonText: { displayText: '🌹 RoseDay' }, type: 1 }
-        ];
-
-        await sock.sendMessage(chatId, { 
+        await sendInteractiveButtons(sock, chatId, {
             text: data.result,
-            buttons: buttons,
-            headerType: 1
+            nativeButtons: [
+                {
+                    name: 'quick_reply',
+                    buttonParamsJson: JSON.stringify({
+                        display_text: 'Shayari 🪄',
+                        id: '.shayari'
+                    })
+                },
+                {
+                    name: 'quick_reply',
+                    buttonParamsJson: JSON.stringify({
+                        display_text: '🌹 RoseDay',
+                        id: '.roseday'
+                    })
+                }
+            ]
         }, { quoted: message });
     } catch (error) {
         console.error('Error in shayari command:', error);

@@ -1,4 +1,5 @@
 const fetch = require('node-fetch');
+const { sendInteractiveButtons } = require('../lib/interactiveButtons');
 
 async function memeCommand(sock, chatId, message) {
     try {
@@ -9,17 +10,30 @@ async function memeCommand(sock, chatId, message) {
         if (contentType && contentType.includes('image')) {
             const imageBuffer = await response.buffer();
             
-            const buttons = [
-                { buttonId: '.meme', buttonText: { displayText: '🎭 Another Meme' }, type: 1 },
-                { buttonId: '.joke', buttonText: { displayText: '😄 Joke' }, type: 1 }
-            ];
-
             await sock.sendMessage(chatId, { 
                 image: imageBuffer,
-                caption: "> Here's your cheems meme! 🐕",
-                buttons: buttons,
-                headerType: 1
+                caption: "> Here's your cheems meme! 🐕"
             },{ quoted: message});
+
+            await sendInteractiveButtons(sock, chatId, {
+                text: 'Pick your next fun command:',
+                nativeButtons: [
+                    {
+                        name: 'quick_reply',
+                        buttonParamsJson: JSON.stringify({
+                            display_text: '🎭 Another Meme',
+                            id: '.meme'
+                        })
+                    },
+                    {
+                        name: 'quick_reply',
+                        buttonParamsJson: JSON.stringify({
+                            display_text: '😄 Joke',
+                            id: '.joke'
+                        })
+                    }
+                ]
+            }, { quoted: message });
         } else {
             throw new Error('Invalid response type from API');
         }

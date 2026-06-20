@@ -1,31 +1,34 @@
 const settings = require('../settings');
+const { sendInteractiveButtons } = require('../lib/interactiveButtons');
 
 async function twilioCommand(sock, chatId, message) {
-    const templateButtons = [
-        {
-            urlButton: {
-                displayText: '🌐 Visit GitHub',
-                url: 'https://github.com/gatotkacabatu999-lab/Knightbot-MD'
-            }
-        },
-        {
-            callButton: {
-                displayText: '📞 Contact Owner',
-                phoneNumber: `+${settings.ownerNumber}`
-            }
-        },
-        {
-            quickReplyButton: {
-                displayText: '💬 Get Help',
-                id: '.help'
-            }
-        }
-    ];
-
-    await sock.sendMessage(chatId, {
+    await sendInteractiveButtons(sock, chatId, {
         text: `Hello! I am ${settings.botName}. Choose an option below to get started.`,
         footer: `${settings.botName} • by ${settings.botOwner}`,
-        templateButtons
+        nativeButtons: [
+            {
+                name: 'cta_url',
+                buttonParamsJson: JSON.stringify({
+                    display_text: '🌐 Visit GitHub',
+                    url: 'https://github.com/gatotkacabatu999-lab/Knightbot-MD',
+                    merchant_url: 'https://github.com/gatotkacabatu999-lab/Knightbot-MD'
+                })
+            },
+            {
+                name: 'cta_call',
+                buttonParamsJson: JSON.stringify({
+                    display_text: '📞 Contact Owner',
+                    id: `+${settings.ownerNumber}`
+                })
+            },
+            {
+                name: 'quick_reply',
+                buttonParamsJson: JSON.stringify({
+                    display_text: '💬 Get Help',
+                    id: '.help'
+                })
+            }
+        ]
     }, { quoted: message });
 }
 
