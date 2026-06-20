@@ -166,6 +166,41 @@ const channelInfo = {
     }
 };
 
+const MESSAGE_COUNT_PATH = './data/messageCount.json'
+const DEFAULT_MESSAGE_COUNT_STATE = {
+    isPublic: true,
+    messageCount: {}
+}
+
+function ensureMessageCountDataFile() {
+    try {
+        if (!fs.existsSync('./data')) fs.mkdirSync('./data', { recursive: true })
+        if (!fs.existsSync(MESSAGE_COUNT_PATH)) {
+            fs.writeFileSync(MESSAGE_COUNT_PATH, JSON.stringify(DEFAULT_MESSAGE_COUNT_STATE, null, 2))
+        }
+    } catch (_) {}
+}
+
+function readMessageCountData() {
+    ensureMessageCountDataFile()
+    try {
+        const parsed = JSON.parse(fs.readFileSync(MESSAGE_COUNT_PATH, 'utf8'))
+        if (parsed && typeof parsed === 'object') return parsed
+    } catch (_) {}
+
+    const fallback = { ...DEFAULT_MESSAGE_COUNT_STATE }
+    writeMessageCountData(fallback)
+    return fallback
+}
+
+function writeMessageCountData(data) {
+    ensureMessageCountDataFile()
+    try {
+        const payload = (data && typeof data === 'object') ? data : { ...DEFAULT_MESSAGE_COUNT_STATE }
+        fs.writeFileSync(MESSAGE_COUNT_PATH, JSON.stringify(payload, null, 2))
+    } catch (_) {}
+}
+
 function parseCustomButtonParams(button) {
     const raw = button?.buttonParamsJson
     if (!raw) return null
@@ -382,13 +417,8 @@ async function handleMessages(sock, messageUpdate, printLog) {
         }
         // Read bot mode once; don't early-return so moderation can still run in private mode
         let isPublic = true;
-        try {
-            const data = JSON.parse(fs.readFileSync('./data/messageCount.json'));
-            if (typeof data.isPublic === 'boolean') isPublic = data.isPublic;
-        } catch (error) {
-            console.error('Error checking access mode:', error);
-            // default isPublic=true on error
-        }
+        const modeData = readMessageCountData();
+        if (typeof modeData.isPublic === 'boolean') isPublic = modeData.isPublic;
         const isOwnerOrSudoCheck = message.key.fromMe || senderIsOwnerOrSudo;
         // Check if user is banned (skip ban check for unban command)
         if (isBanned(senderId) && !userMessage.startsWith('.unban')) {
@@ -606,14 +636,7 @@ async function handleMessages(sock, messageUpdate, printLog) {
                     return;
                 }
                 // Read current data first
-                let data;
-                try {
-                    data = JSON.parse(fs.readFileSync('./data/messageCount.json'));
-                } catch (error) {
-                    console.error('Error reading access mode:', error);
-                    await sock.sendMessage(chatId, { text: 'Failed to read bot mode status', ...channelInfo });
-                    return;
-                }
+                let data = readMessageCountData();
 
                 const action = userMessage.split(' ')[1]?.toLowerCase();
                 // If no argument provided, show current status
@@ -639,7 +662,7 @@ async function handleMessages(sock, messageUpdate, printLog) {
                     data.isPublic = action === 'public';
 
                     // Save updated data
-                    fs.writeFileSync('./data/messageCount.json', JSON.stringify(data, null, 2));
+                    writeMessageCountData(data);
 
                     await sock.sendMessage(chatId, { text: `Bot is now in *${action}* mode`, ...channelInfo });
                 } catch (error) {
@@ -1473,12 +1496,8 @@ async function handleGroupParticipantUpdate(sock, update) {
 
         // Respect bot mode: only announce promote/demote in public mode
         let isPublic = true;
-        try {
-            const modeData = JSON.parse(fs.readFileSync('./data/messageCount.json'));
-            if (typeof modeData.isPublic === 'boolean') isPublic = modeData.isPublic;
-        } catch (e) {
-            // If reading fails, default to public behavior
-        }
+        const modeData = readMessageCountData();
+        if (typeof modeData.isPublic === 'boolean') isPublic = modeData.isPublic;
 
         // Handle promotion events
         if (action === 'promote') {
