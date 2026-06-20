@@ -104,6 +104,20 @@ function normalizeCommandCategory(value) {
     return raw.slice(0, 32);
 }
 
+function getGroupNamesFromStore() {
+    const map = new Map()
+    try {
+        const store = readJSON('./baileys_store.json', {})
+        const chats = store && typeof store.chats === 'object' ? store.chats : {}
+        for (const [id, data] of Object.entries(chats || {})) {
+            if (!id.endsWith('@g.us')) continue
+            const subject = (data && (data.subject || data.name || data.groupName) || '').toString().trim()
+            if (subject) map.set(id, subject)
+        }
+    } catch (_) {}
+    return map
+}
+
 // ── API: Bot status ─────────────────────────────────────────────────────────
 app.get('/api/status', (req, res) => {
     const creds = readJSON('./session/creds.json')
@@ -220,7 +234,9 @@ app.post('/api/settings', (req, res) => {
         // Reload settings module
         delete require.cache[require.resolve('./settings')]
 
-        res.json({ success: true, message: 'Settings saved! Restart the bot for full effect.' })
+        res.json({ success: true, message: 'Settings saved. Restarting bot now...', restarting: true })
+        // Trigger process restart so new settings are applied immediately.
+        setTimeout(() => process.exit(1), 800)
     } catch (err) {
         res.status(500).json({ success: false, error: err.message })
     }
@@ -527,6 +543,7 @@ app.get('/api/groups', (req, res) => {
     try {
         const userGroupData = readJSON('./data/userGroupData.json', {})
         const messageCount = readJSON('./data/messageCount.json', {})
+        const storeGroupNames = getGroupNamesFromStore()
 
         const map = new Map()
 
@@ -567,12 +584,25 @@ app.get('/api/groups', (req, res) => {
 
             map.set(data.id, {
                 id: data.id,
-                name: data.groupName || data.name || existing.name,
+                name: data.groupName || data.name || storeGroupNames.get(data.id) || existing.name,
                 members: memberCount || 0,
                 messages: getTotalMessagesForChat(messageCount, data.id),
                 admin: typeof data.admin === 'boolean' ? data.admin : existing.admin,
                 joinedDate: data.joinDate || data.joinedDate || existing.joinedDate,
             })
+        }
+
+        for (const [id, groupName] of storeGroupNames.entries()) {
+            if (!map.has(id)) {
+                map.set(id, {
+                    id,
+                    name: groupName || 'Unknown',
+                    members: 0,
+                    messages: getTotalMessagesForChat(messageCount, id),
+                    admin: false,
+                    joinedDate: null,
+                })
+            }
         }
 
         const groups = Array.from(map.values()).sort((a, b) => b.messages - a.messages)
@@ -698,7 +728,8 @@ app.post('/api/advanced-settings', (req, res) => {
         fs.writeFileSync(settingsPath, content, 'utf8')
         delete require.cache[require.resolve('./settings')]
         
-        res.json({ success: true, message: `Setting updated! Restart bot for effect.` })
+        res.json({ success: true, message: 'Setting updated. Restarting bot now...', restarting: true })
+        setTimeout(() => process.exit(1), 800)
     } catch (err) {
         res.status(500).json({ success: false, error: err.message })
     }

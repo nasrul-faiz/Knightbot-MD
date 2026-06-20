@@ -247,7 +247,7 @@
         </div>
         <div style="margin-top:24px">
           <button class="btn btn-green" onclick="saveSettings()" style="width:100%">💾 Save Settings</button>
-          <p style="font-size:12px;color:var(--text-dim);margin-top:8px;text-align:center">Restart the bot after saving for changes to take effect.</p>
+          <p style="font-size:12px;color:var(--text-dim);margin-top:8px;text-align:center">Bot akan auto-restart selepas simpan settings.</p>
         </div>
       </div>
     </div>
@@ -782,7 +782,15 @@ async function saveSettings() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     }).then(r => r.json())
-    if (res.success) showToast(res.message)
+    if (res.success) {
+      showToast(res.message || 'Settings saved')
+      if (res.restarting) {
+        setTimeout(() => {
+          loadStatus()
+          loadSettings()
+        }, 2500)
+      }
+    }
     else showToast(res.error || 'Failed to save', 'error')
   } catch(e) {
     showToast('Network error', 'error')

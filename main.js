@@ -1392,7 +1392,17 @@ async function handleMessages(sock, messageUpdate, printLog) {
                                         ? fs.readFileSync(path.join(__dirname, 'public', matched.mediaUrl))
                                         : { url: matched.mediaUrl };
                                     const displayName = matched.fileName || (isLocal ? path.basename(matched.mediaUrl) : 'file');
-                                    const payload = { caption };
+                                    const hasButtons = Boolean(customButtons.nativeButtons);
+                                    const payload = hasButtons ? {} : { caption };
+
+                                    // Send interactive buttons first so they are not visually buried by media on some clients.
+                                    if (hasButtons) {
+                                        await sendInteractiveButtons(sock, chatId, {
+                                            text: caption || 'Choose an option:',
+                                            nativeButtons: customButtons.nativeButtons
+                                        }, { quoted: message });
+                                    }
+
                                     if (mt === 'image') {
                                         await sock.sendMessage(chatId, { image: mediaSrc, ...payload }, { quoted: message });
                                     } else if (mt === 'video') {
@@ -1401,13 +1411,6 @@ async function handleMessages(sock, messageUpdate, printLog) {
                                         await sock.sendMessage(chatId, { audio: mediaSrc, mimetype: 'audio/mpeg', ptt: false, ...payload }, { quoted: message });
                                     } else if (mt === 'document') {
                                         await sock.sendMessage(chatId, { document: mediaSrc, fileName: displayName, mimetype: 'application/octet-stream', ...payload }, { quoted: message });
-                                    }
-
-                                    if (customButtons.nativeButtons) {
-                                        await sendInteractiveButtons(sock, chatId, {
-                                            text: caption || 'Choose an option:',
-                                            nativeButtons: customButtons.nativeButtons
-                                        }, { quoted: message });
                                     }
                                 }
                             } else if (caption) {
