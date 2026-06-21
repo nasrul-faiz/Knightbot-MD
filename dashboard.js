@@ -108,14 +108,67 @@ function getGroupNamesFromStore() {
     const map = new Map()
     try {
         const store = readJSON('./baileys_store.json', {})
-        const chats = store && typeof store.chats === 'object' ? store.chats : {}
-        for (const [id, data] of Object.entries(chats || {})) {
-            if (!id.endsWith('@g.us')) continue
-            const subject = (data && (data.subject || data.name || data.groupName) || '').toString().trim()
-            if (subject) map.set(id, subject)
+        const chats = store && store.chats ? store.chats : {}
+
+        if (Array.isArray(chats)) {
+            for (const item of chats) {
+                const id = String(item?.id || item?.jid || '').trim()
+                if (!id.endsWith('@g.us')) continue
+                const subject = (item?.subject || item?.name || item?.groupName || '').toString().trim()
+                if (subject) map.set(id, subject)
+            }
+        } else if (chats && typeof chats === 'object') {
+            for (const [id, data] of Object.entries(chats)) {
+                if (!id.endsWith('@g.us')) continue
+                const subject = (data && (data.subject || data.name || data.groupName) || '').toString().trim()
+                if (subject) map.set(id, subject)
+            }
         }
     } catch (_) {}
     return map
+}
+
+function getGroupIdsFromStore() {
+    const ids = new Set()
+    try {
+        const store = readJSON('./baileys_store.json', {})
+
+        const chats = store && store.chats ? store.chats : {}
+        if (Array.isArray(chats)) {
+            for (const item of chats) {
+                const id = String(item?.id || item?.jid || '').trim()
+                if (id.endsWith('@g.us')) ids.add(id)
+            }
+        } else if (chats && typeof chats === 'object') {
+            for (const id of Object.keys(chats)) {
+                if (String(id).endsWith('@g.us')) ids.add(String(id))
+            }
+        }
+
+        const messages = store && store.messages && typeof store.messages === 'object' ? store.messages : {}
+        for (const key of Object.keys(messages)) {
+            if (String(key).endsWith('@g.us')) ids.add(String(key))
+        }
+    } catch (_) {}
+    return ids
+}
+
+function getGroupIdsFromMessageCount(messageCount) {
+    const ids = new Set()
+    if (!messageCount || typeof messageCount !== 'object') return ids
+
+    for (const key of Object.keys(messageCount)) {
+        if (typeof key === 'string' && key.endsWith('@g.us')) ids.add(key)
+    }
+
+    const nested = messageCount.messageCount
+    if (nested && typeof nested === 'object') {
+        for (const key of Object.keys(nested)) {
+            if (typeof key === 'string' && key.endsWith('@g.us')) ids.add(key)
+        }
+    }
+
+    return ids
 }
 
 // ── API: Bot status ─────────────────────────────────────────────────────────
@@ -544,6 +597,7 @@ app.get('/api/groups', (req, res) => {
         const userGroupData = readJSON('./data/userGroupData.json', {})
         const messageCount = readJSON('./data/messageCount.json', {})
         const storeGroupNames = getGroupNamesFromStore()
+        const storeGroupIds = getGroupIdsFromStore()
 
         const map = new Map()
 
@@ -563,8 +617,7 @@ app.get('/api/groups', (req, res) => {
                 .filter((g) => typeof g.id === 'string' && g.id.endsWith('@g.us'))
             : []
 
-        const messageCountGroups = Object.keys(messageCount || {})
-            .filter((id) => id.endsWith('@g.us'))
+        const messageCountGroups = Array.from(getGroupIdsFromMessageCount(messageCount))
             .map((id) => ({ id, groupName: 'Unknown', members: {}, admin: false, joinDate: null }))
 
         for (const data of [...entryObjects, ...legacyGroups, ...messageCountGroups]) {
@@ -597,6 +650,19 @@ app.get('/api/groups', (req, res) => {
                 map.set(id, {
                     id,
                     name: groupName || 'Unknown',
+                    members: 0,
+                    messages: getTotalMessagesForChat(messageCount, id),
+                    admin: false,
+                    joinedDate: null,
+                })
+            }
+        }
+
+        for (const id of storeGroupIds) {
+            if (!map.has(id)) {
+                map.set(id, {
+                    id,
+                    name: storeGroupNames.get(id) || 'Unknown',
                     members: 0,
                     messages: getTotalMessagesForChat(messageCount, id),
                     admin: false,
