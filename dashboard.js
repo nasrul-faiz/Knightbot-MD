@@ -11,6 +11,7 @@ const {
     deleteSchedule,
     formatDateTime,
 } = require('./lib/scheduler')
+const { refreshRuntimeSettings, getCurrentSettings } = require('./lib/runtimeSettings')
 
 const app = express()
 const PORT = process.env.PORT || 5000
@@ -238,7 +239,7 @@ app.get('/api/logs', (req, res) => {
 
 // ── API: Settings GET ───────────────────────────────────────────────────────
 app.get('/api/settings', (req, res) => {
-    const settings = require('./settings')
+    const settings = getCurrentSettings('./settings')
     res.json({
         botName: settings.botName,
         botOwner: settings.botOwner,
@@ -284,12 +285,9 @@ app.post('/api/settings', (req, res) => {
 
         fs.writeFileSync(settingsPath, content, 'utf8')
 
-        // Reload settings module
-        delete require.cache[require.resolve('./settings')]
+        refreshRuntimeSettings('./settings')
 
-        res.json({ success: true, message: 'Settings saved. Restarting bot now...', restarting: true })
-        // Trigger process restart so new settings are applied immediately.
-        setTimeout(() => process.exit(1), 800)
+        res.json({ success: true, message: 'Settings saved and applied instantly.', restarting: false })
     } catch (err) {
         res.status(500).json({ success: false, error: err.message })
     }
@@ -758,7 +756,7 @@ app.delete('/api/schedules/:id', (req, res) => {
 // ── API: Advanced Settings GET ──────────────────────────────────────────────────
 app.get('/api/advanced-settings', (req, res) => {
     try {
-        const settings = require('./settings')
+        const settings = getCurrentSettings('./settings')
         res.json({
             prefix: settings.prefix || '.',
             autoTyping: settings.autoTyping !== false,
@@ -792,10 +790,9 @@ app.post('/api/advanced-settings', (req, res) => {
         )
         
         fs.writeFileSync(settingsPath, content, 'utf8')
-        delete require.cache[require.resolve('./settings')]
+        refreshRuntimeSettings('./settings')
         
-        res.json({ success: true, message: 'Setting updated. Restarting bot now...', restarting: true })
-        setTimeout(() => process.exit(1), 800)
+        res.json({ success: true, message: 'Setting updated and applied instantly.', restarting: false })
     } catch (err) {
         res.status(500).json({ success: false, error: err.message })
     }

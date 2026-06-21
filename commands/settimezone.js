@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const moment = require('moment-timezone');
 const isOwnerOrSudo = require('../lib/isOwner');
+const { refreshRuntimeSettings, getCurrentSettings } = require('../lib/runtimeSettings');
 
 function replaceStringSetting(content, key, value) {
     const escaped = String(value).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
@@ -27,8 +28,7 @@ module.exports = async function setTimezoneCommand(sock, chatId, message, rawTex
         const parts = input.split(/\s+/);
         const requestedZone = (parts[1] || '').trim();
 
-        delete require.cache[require.resolve('../settings')];
-        const currentSettings = require('../settings');
+        const currentSettings = getCurrentSettings('../settings');
         const currentZone = (currentSettings.timeZone || 'UTC').trim();
 
         if (!requestedZone) {
@@ -59,7 +59,7 @@ module.exports = async function setTimezoneCommand(sock, chatId, message, rawTex
         content = replaceStringSetting(content, 'timeZone', requestedZone);
         fs.writeFileSync(settingsPath, content, 'utf8');
 
-        delete require.cache[require.resolve('../settings')];
+        refreshRuntimeSettings('../settings');
 
         await sock.sendMessage(chatId, {
             text: `✅ Timezone berjaya ditukar\nDari: ${currentZone}\nKe: ${requestedZone}`
