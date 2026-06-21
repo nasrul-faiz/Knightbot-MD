@@ -239,7 +239,7 @@ app.get('/api/logs', (req, res) => {
 
 // ── API: Settings GET ───────────────────────────────────────────────────────
 app.get('/api/settings', (req, res) => {
-    const settings = getCurrentSettings('./settings')
+    const settings = getCurrentSettings('../settings')
     res.json({
         botName: settings.botName,
         botOwner: settings.botOwner,
@@ -285,7 +285,7 @@ app.post('/api/settings', (req, res) => {
 
         fs.writeFileSync(settingsPath, content, 'utf8')
 
-        refreshRuntimeSettings('./settings')
+        refreshRuntimeSettings('../settings')
 
         res.json({ success: true, message: 'Settings saved and applied instantly.', restarting: false })
     } catch (err) {
@@ -756,7 +756,7 @@ app.delete('/api/schedules/:id', (req, res) => {
 // ── API: Advanced Settings GET ──────────────────────────────────────────────────
 app.get('/api/advanced-settings', (req, res) => {
     try {
-        const settings = getCurrentSettings('./settings')
+        const settings = getCurrentSettings('../settings')
         res.json({
             prefix: settings.prefix || '.',
             autoTyping: settings.autoTyping !== false,
@@ -790,7 +790,7 @@ app.post('/api/advanced-settings', (req, res) => {
         )
         
         fs.writeFileSync(settingsPath, content, 'utf8')
-        refreshRuntimeSettings('./settings')
+        refreshRuntimeSettings('../settings')
         
         res.json({ success: true, message: 'Setting updated and applied instantly.', restarting: false })
     } catch (err) {
