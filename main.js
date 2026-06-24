@@ -217,6 +217,38 @@ function parseCustomButtonParams(button) {
     return null
 }
 
+function getNativeButtonDedupKey(button) {
+    if (!button || typeof button !== 'object') return ''
+
+    const name = String(button.name || '').trim()
+    const rawParams = button.buttonParamsJson
+    let params = {}
+
+    if (typeof rawParams === 'string') {
+        try {
+            params = JSON.parse(rawParams)
+        } catch (_) {
+            params = {}
+        }
+    } else if (rawParams && typeof rawParams === 'object') {
+        params = rawParams
+    }
+
+    if (name === 'quick_reply') {
+        return `quick_reply:${String(params.id || params.buttonId || '').trim()}:${String(params.display_text || params.displayText || '').trim()}`
+    }
+
+    if (name === 'cta_url') {
+        return `cta_url:${String(params.url || params.link || params.merchant_url || '').trim()}:${String(params.display_text || params.displayText || '').trim()}`
+    }
+
+    if (name === 'cta_call') {
+        return `cta_call:${String(params.phone_number || params.phoneNumber || '').trim()}:${String(params.display_text || params.displayText || '').trim()}`
+    }
+
+    return `${name}:${typeof rawParams === 'string' ? rawParams.trim() : JSON.stringify(rawParams || {})}`
+}
+
 function normalizeCustomCommandButtons(buttons) {
     if (!Array.isArray(buttons) || !buttons.length) return { buttons: null, templateButtons: null, nativeButtons: null }
 
@@ -317,10 +349,20 @@ function normalizeCustomCommandButtons(buttons) {
         }
     }
 
-    const nativeButtons = [...passthroughNativeButtons]
+    const nativeButtons = []
+    const seenNativeButtonKeys = new Set()
+    const addNativeButton = (button) => {
+        const key = getNativeButtonDedupKey(button)
+        if (!key || seenNativeButtonKeys.has(key)) return
+        seenNativeButtonKeys.add(key)
+        nativeButtons.push(button)
+    }
+
+    for (const button of passthroughNativeButtons) addNativeButton(button)
+
     for (const button of templateButtons) {
         if (button.quickReplyButton?.id) {
-            nativeButtons.push({
+            addNativeButton({
                 name: 'quick_reply',
                 buttonParamsJson: JSON.stringify({
                     display_text: button.quickReplyButton.displayText || 'Button',
@@ -330,7 +372,7 @@ function normalizeCustomCommandButtons(buttons) {
             continue
         }
         if (button.urlButton?.url) {
-            nativeButtons.push({
+            addNativeButton({
                 name: 'cta_url',
                 buttonParamsJson: JSON.stringify({
                     display_text: button.urlButton.displayText || 'Open Link',
@@ -341,7 +383,7 @@ function normalizeCustomCommandButtons(buttons) {
             continue
         }
         if (button.callButton?.phoneNumber) {
-            nativeButtons.push({
+            addNativeButton({
                 name: 'cta_call',
                 buttonParamsJson: JSON.stringify({
                     display_text: button.callButton.displayText || 'Call',
