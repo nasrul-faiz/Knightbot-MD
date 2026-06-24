@@ -110,6 +110,29 @@ const question = (text) => {
     }
 }
 
+// Prevent restart storms when multiple close events fire in quick succession.
+let isSocketRestartScheduled = false
+
+async function restartSocketInProcess(delayMs = 5000, reason = 'connection update') {
+    if (isSocketRestartScheduled) {
+        console.log(chalk.yellow(`Restart already scheduled, skip duplicate trigger (${reason}).`))
+        return
+    }
+
+    isSocketRestartScheduled = true
+    console.log(chalk.yellow(`Reconnecting in ${Math.floor(delayMs / 1000)}s... (${reason})`))
+
+    try {
+        await delay(delayMs)
+        await startXeonBotInc()
+    } catch (err) {
+        console.error(chalk.red('Failed to restart socket in-process:'), err)
+        process.exit(1)
+    } finally {
+        isSocketRestartScheduled = false
+    }
+}
+
 
 async function startXeonBotInc() {
     try {
@@ -368,20 +391,18 @@ async function startXeonBotInc() {
                     } catch (e) { console.error('Error clearing session:', e.message) }
                     writeConflictCount(0)
                     console.log(chalk.yellow('Session cleared. Restarting to re-pair in 5s...'))
-                    await delay(5000)
-                    process.exit(1)
+                    await restartSocketInProcess(5000, 'conflict threshold reached')
                     return
                 }
 
                 console.log(chalk.yellow(`Waiting ${backoff / 1000}s before retrying to let other session close...`))
-                await delay(backoff)
-                process.exit(1)
+                await restartSocketInProcess(backoff, 'session conflict')
                 return
             }
 
-            // QR expired (408) OR Logged out (401) — clear ALL session files before restart
-            // Without clearing, partial creds from QR attempt cause immediate 401 on next start
-            if (statusCode === 408 || statusCode === DisconnectReason.loggedOut || statusCode === 401) {
+            // Logged out (401) must clear ALL session files before restart.
+            // 408 (QR refs attempts ended) is recoverable: restart socket without clearing creds.
+            if (statusCode === DisconnectReason.loggedOut || statusCode === 401) {
                 try {
                     rmSync('./session', { recursive: true, force: true })
                     fs.mkdirSync('./session', { recursive: true })
@@ -391,22 +412,24 @@ async function startXeonBotInc() {
                 }
                 if (statusCode === 401) {
                     console.log(chalk.red('Logged out by WhatsApp. Waiting 10s before restart...'))
-                    await delay(10000)
+                    await restartSocketInProcess(10000, 'logged out (401)')
+                } else {
+                    await restartSocketInProcess(5000, 'logged out')
                 }
-                process.exit(1)
+                return
+            }
+
+            if (statusCode === 408) {
+                // QR refs attempts ended: just regenerate QR by restarting socket.
+                await restartSocketInProcess(3000, 'qr refs ended (408)')
                 return
             }
 
             // Reset conflict counter on clean reconnect
-            global.conflictCount = 0
+            writeConflictCount(0)
 
-            // Any other error — exit cleanly so shell restarts a fresh single process
-            const shouldReconnect = statusCode !== DisconnectReason.loggedOut
-            if (shouldReconnect) {
-                console.log(chalk.yellow('Reconnecting in 5s...'))
-                await delay(5000)
-                process.exit(1)
-            }
+            // Any other recoverable error: reconnect in-process to avoid restart churn.
+            await restartSocketInProcess(5000, `disconnect status ${statusCode || 'unknown'}`)
         }
     })
 
