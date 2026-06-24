@@ -37,6 +37,7 @@ if (!global.dashboardLogs) global.dashboardLogs = []
 // Intercept console.log/error for logs
 const originalLog = console.log
 const originalError = console.error
+const originalStderrWrite = process.stderr.write.bind(process.stderr)
 // Noise patterns to suppress from dashboard logs and (optionally) terminal.
 // Set SUPPRESS_NOISY_SESSION_LOGS=0 to keep all raw session logs in terminal.
 const SUPPRESS_NOISY_SESSION_LOGS = process.env.SUPPRESS_NOISY_SESSION_LOGS !== '0'
@@ -86,6 +87,19 @@ function shouldPrintToTerminal(args) {
     if (!SUPPRESS_NOISY_SESSION_LOGS) return true
     const msg = args.map(a => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ')
     return !isSuppressed(msg)
+}
+process.stderr.write = (chunk, encoding, callback) => {
+    if (!SUPPRESS_NOISY_SESSION_LOGS) {
+        return originalStderrWrite(chunk, encoding, callback)
+    }
+
+    const text = Buffer.isBuffer(chunk) ? chunk.toString('utf8') : String(chunk)
+    if (isSuppressed(text)) {
+        if (typeof callback === 'function') callback()
+        return true
+    }
+
+    return originalStderrWrite(chunk, encoding, callback)
 }
 console.log = (...args) => {
     addLog('info', args)
