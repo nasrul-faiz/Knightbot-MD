@@ -23,14 +23,39 @@
     --blue: #3b82f6;
     --text: #fafafa;
     --text-dim: #a1a1aa;
+    --list-row-border: rgba(63, 63, 70, .48);
+    --list-card-border: rgba(63, 63, 70, .62);
+    --list-head-border: rgba(82, 82, 91, .55);
+    --list-header-bg: rgba(39, 39, 42, .72);
+    --list-card-shadow: 0 8px 24px rgba(0, 0, 0, .22);
     --radius: 8px;
+  }
+  body[data-theme='light'] {
+    --bg: #f6f8fb;
+    --surface: #ffffff;
+    --surface2: #eef2f7;
+    --border: #d8e0eb;
+    --green: #16a34a;
+    --green-dim: #15803d;
+    --pink: #db2777;
+    --lav: #6366f1;
+    --red: #dc2626;
+    --yellow: #ca8a04;
+    --blue: #2563eb;
+    --text: #0f172a;
+    --text-dim: #475569;
+    --list-row-border: rgba(148, 163, 184, .55);
+    --list-card-border: rgba(148, 163, 184, .62);
+    --list-head-border: rgba(148, 163, 184, .52);
+    --list-header-bg: rgba(241, 245, 249, .95);
+    --list-card-shadow: 0 6px 20px rgba(15, 23, 42, .08);
   }
   body { background: var(--bg); color: var(--text); font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; font-size: 14px; -webkit-font-smoothing: antialiased; }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
 
   /* App shell + sidebar */
-  .app { display: flex; min-height: 100vh; }
-  .sidebar { width: 248px; flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--border); padding: 16px 12px; display: flex; flex-direction: column; gap: 2px; position: fixed; left: 0; top: 0; height: 100vh; z-index: 200; transform: translateX(-260px); transition: transform .25s ease; overflow: hidden; }
+  .app { display: flex; min-height: 100dvh; }
+  .sidebar { width: 248px; flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--border); padding: 16px 12px calc(16px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 2px; position: fixed; left: 0; top: 0; height: 100dvh; max-height: 100dvh; z-index: 200; transform: translateX(-260px); transition: transform .25s ease; overflow-x: hidden; overflow-y: auto; }
   .sidebar.open { transform: translateX(0); box-shadow: 4px 0 32px rgba(0,0,0,.6); }
   .brand { display: flex; align-items: center; gap: 10px; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 14px; color: var(--text); padding: 6px 6px 14px; }
   .brand-icon { width: 32px; height: 32px; padding: 6px; box-sizing: border-box; color: var(--green); background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; flex-shrink: 0; cursor: pointer; }
@@ -155,8 +180,41 @@
     padding: 10px;
     background: rgba(0,0,0,.18);
   }
+  body[data-theme='light'] .cc-panel {
+    background:
+      radial-gradient(120% 120% at 110% -20%, rgba(22,163,74,.12), transparent 52%),
+      radial-gradient(120% 120% at -10% -30%, rgba(37,99,235,.08), transparent 45%),
+      var(--surface);
+    border: 1px solid rgba(15,23,42,.08);
+    box-shadow: 0 8px 26px rgba(15,23,42,.08);
+  }
+  body[data-theme='light'] .cc-help {
+    border: 1px dashed rgba(15,23,42,.16);
+    background: rgba(148,163,184,.10);
+  }
+  body[data-theme='light'] .cc-button-row {
+    border: 1px solid rgba(15,23,42,.14);
+    background: rgba(148,163,184,.12);
+  }
   .cc-button-extra { margin-top: 8px; }
   .cc-button-hint { font-size: 11px; color: var(--text-dim); margin-top: 5px; }
+  .theme-toggle {
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .theme-toggle:hover { border-color: var(--green); color: var(--green); }
+  .sidebar-theme { padding: 8px 10px 6px; border-top: 1px solid var(--border); margin-top: 4px; }
+  .sidebar-theme .theme-toggle { width: 100%; margin: 0; }
+  .action-select-delete {
+    color: var(--red);
+    font-weight: 600;
+  }
   .cc-button-extra textarea {
     min-height: 86px;
     resize: vertical;
@@ -183,6 +241,31 @@
   /* Dim overlay behind open sidebar */
   .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 199; }
   .sidebar-overlay.active { display: block; }
+  .list-frame {
+    border: 1px solid var(--list-card-border);
+    border-radius: 12px;
+    background: var(--surface);
+    box-shadow: var(--list-card-shadow);
+  }
+  .list-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--list-head-border);
+    background: var(--list-header-bg);
+  }
+  .list-head-row {
+    border-bottom: 1px solid var(--list-head-border);
+  }
+  .list-row {
+    border-bottom: 1px solid var(--list-row-border);
+  }
+  .list-table tbody .list-row:last-child {
+    border-bottom: none;
+  }
 </style>
 </head>
 <body>
@@ -208,6 +291,9 @@
     <div class="side-status">
       <div class="dot" id="navDot"></div>
       <span id="navStatusText" class="side-status-text">Checking...</span>
+    </div>
+    <div class="sidebar-theme">
+      <button id="themeToggleBtn" class="theme-toggle" onclick="toggleTheme()" title="Switch light/dark mode">🌙 Dark</button>
     </div>
   </aside>
   <main class="main">
@@ -409,7 +495,7 @@
         </div>
         <div class="form-group">
           <label>Time (HH:MM)</label>
-          <input type="time" id="scheduleTime" />
+          <input type="time" id="scheduleTime" style="max-width:190px" />
         </div>
         <div class="form-group">
           <label>Message</label>
@@ -446,51 +532,30 @@
           Add Custom Command
         </div>
         <div class="form-group">
-          <label>Trigger <span style="color:var(--text-dim)">(must start with .)</span></label>
-          <input type="text" id="ccTrigger" placeholder=".hello" />
-        </div>
-        <div class="form-group">
-          <label>Response</label>
-          <textarea id="ccResponse" rows="4" placeholder="Hello! Welcome to the group 👋"></textarea>
-        </div>
-        <div class="form-group">
-          <label>Description <span style="color:var(--text-dim)">(optional)</span></label>
-          <input type="text" id="ccDescription" placeholder="Greeting command" />
-        </div>
-        <div class="form-group">
-          <label>Buttons <span style="color:var(--text-dim)">(optional)</span></label>
-          <div class="cc-help" style="margin-bottom:8px">Supported UI types: <b style="color:var(--text)">quick_reply</b>, <b style="color:var(--text)">cta_url</b>, <b style="color:var(--text)">cta_call</b>, <b style="color:var(--text)">cta_copy</b>, <b style="color:var(--text)">single_select</b>.</div>
-          <div id="ccButtonsContainer" style="display:flex;flex-direction:column;gap:8px"></div>
-          <button type="button" class="btn btn-outline btn-sm" onclick="addCcButtonRow('ccButtonsContainer')" style="margin-top:8px">+ Add Button</button>
-        </div>
-        <div class="form-group">
-          <label>Category</label>
-          <select id="ccCategory">
-            <option value="General">General</option>
-            <option value="Greeting">Greeting</option>
-            <option value="Info">Info</option>
-            <option value="Utility">Utility</option>
-            <option value="Fun">Fun</option>
-            <option value="Media">Media</option>
-            <option value="Moderation">Moderation</option>
-            <option value="Other">Other</option>
+          <label>Step 1: Media Type</label>
+          <select id="ccMediaType" onchange="toggleMediaFields()">
+            <option value="">— Choose media type first —</option>
+            <option value="text">📝 Text</option>
+            <option value="image">🖼️ Image</option>
+            <option value="video">🎬 Video</option>
+            <option value="audio">🎵 Audio / Music</option>
+            <option value="document">📄 File / Document</option>
+            <option value="url">🔗 URL / Link</option>
           </select>
         </div>
-        <div style="border-top:1px solid var(--border);margin:16px 0 14px;padding-top:14px">
-          <div style="font-size:12px;font-weight:600;color:var(--text-dim);margin-bottom:12px;text-transform:uppercase;letter-spacing:.05em">📎 Media Attachment (optional)</div>
-          <div class="form-group">
-            <label>Media Type</label>
-            <select id="ccMediaType" onchange="toggleMediaFields()">
-              <option value="">— Text only —</option>
-              <option value="url">🔗 URL / Link</option>
-              <option value="image">🖼️ Image</option>
-              <option value="video">🎬 Video</option>
-              <option value="audio">🎵 Audio / Music</option>
-              <option value="document">📄 File / Document</option>
-            </select>
-          </div>
+        <div id="ccComposeFields" style="display:none">
+        <div class="form-group">
+          <label>Step 2: Trigger <span style="color:var(--text-dim)">(must start with .)</span></label>
+          <input type="text" id="ccTrigger" placeholder=".hello" />
+        </div>
+        <div class="form-group" id="ccResponseWrap" style="display:none">
+          <label id="ccResponseLabel">Response</label>
+          <textarea id="ccResponse" rows="4" placeholder="Hello! Welcome to the group 👋"></textarea>
+        </div>
+        <div id="ccMediaSection" style="display:none;border-top:1px solid var(--border);margin:16px 0 14px;padding-top:14px">
+          <div style="font-size:12px;font-weight:600;color:var(--text-dim);margin-bottom:12px;text-transform:uppercase;letter-spacing:.05em">📎 Media Attachment</div>
           <div id="ccMediaUrlWrap" style="display:none">
-            <div class="form-group">
+            <div class="form-group" id="ccMediaSourceWrap">
               <label>Source</label>
               <div style="display:flex;gap:6px">
                 <button id="ccSrcUrlBtn" onclick="setCcSource('url')" style="flex:1;padding:7px;border-radius:6px;border:1px solid var(--green);background:var(--green);color:#000;font-size:12px;font-weight:600;cursor:pointer">🔗 From URL</button>
@@ -518,6 +583,30 @@
             <label>File Name <span style="color:var(--text-dim)">(shown to receiver)</span></label>
             <input type="text" id="ccFileName" placeholder="file.pdf" />
           </div>
+        </div>
+        <div class="form-group" id="ccButtonsWrap" style="display:none">
+          <label>Step 3: Buttons <span style="color:var(--text-dim)">(optional)</span></label>
+          <div class="cc-help" style="margin-bottom:8px">Supported UI types: <b style="color:var(--text)">quick_reply</b>, <b style="color:var(--text)">cta_url</b>, <b style="color:var(--text)">cta_call</b>, <b style="color:var(--text)">cta_copy</b>, <b style="color:var(--text)">single_select</b>.</div>
+          <div id="ccButtonsContainer" style="display:flex;flex-direction:column;gap:8px"></div>
+          <button type="button" class="btn btn-outline btn-sm" onclick="addCcButtonRow('ccButtonsContainer')" style="margin-top:8px">+ Add Button</button>
+        </div>
+        <div class="form-group" id="ccCategoryWrap" style="display:none">
+          <label>Step 4: Category</label>
+          <select id="ccCategory">
+            <option value="General">General</option>
+            <option value="Greeting">Greeting</option>
+            <option value="Info">Info</option>
+            <option value="Utility">Utility</option>
+            <option value="Fun">Fun</option>
+            <option value="Media">Media</option>
+            <option value="Moderation">Moderation</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-group" id="ccDescriptionWrap" style="display:none">
+          <label>Description <span style="color:var(--text-dim)">(optional)</span></label>
+          <input type="text" id="ccDescription" placeholder="Greeting command" />
+        </div>
         </div>
         <button class="btn btn-green" onclick="addCustomCommand()" style="width:100%">➕ Add Command</button>
         <p style="font-size:12px;color:var(--text-dim);margin-top:8px;text-align:center">Command is active immediately — no restart needed.</p>
@@ -629,6 +718,25 @@
       </div>
     </div>
 
+    <!-- View Modal -->
+    <div id="ccViewModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:205;align-items:center;justify-content:center;overflow-y:auto" onclick="if(event.target===this) closeCcViewModal()">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;max-width:540px;width:92%;margin:auto">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px">
+          <div style="font-size:16px;font-weight:700">👁️ View Command <span id="ccViewTriggerLabel" style="color:var(--green)"></span></div>
+          <button class="btn btn-outline btn-sm" onclick="closeCcViewModal()">✕ Close</button>
+        </div>
+        <div style="display:grid;gap:10px;font-size:13px">
+          <div><b style="color:var(--text)">Description:</b> <span id="ccViewDescription" style="color:var(--text-dim)">—</span></div>
+          <div><b style="color:var(--text)">Category:</b> <span id="ccViewCategory" style="color:var(--text-dim)">—</span></div>
+          <div><b style="color:var(--text)">Media Type:</b> <span id="ccViewMediaType" style="color:var(--text-dim)">—</span></div>
+          <div><b style="color:var(--text)">Media URL:</b> <span id="ccViewMediaUrl" style="color:var(--text-dim)">—</span></div>
+          <div><b style="color:var(--text)">Response:</b></div>
+          <div id="ccViewResponse" style="white-space:pre-wrap;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text-dim)">—</div>
+          <div><b style="color:var(--text)">Buttons:</b> <span id="ccViewButtons" style="color:var(--text-dim)">0</span></div>
+        </div>
+      </div>
+    </div>
+
     <!-- How It Works Modal -->
     <div id="ccGuideModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:210;align-items:center;justify-content:center;overflow-y:auto" onclick="if(event.target===this) closeCcGuideModal()">
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;max-width:560px;width:92%;margin:auto">
@@ -673,6 +781,27 @@
 
 <script>
 let currentStatus = null
+
+function getStoredTheme() {
+  const saved = localStorage.getItem('dashboardTheme')
+  if (saved === 'light' || saved === 'dark') return saved
+  return 'dark'
+}
+
+function applyTheme(theme) {
+  const selectedTheme = theme === 'light' ? 'light' : 'dark'
+  document.body.setAttribute('data-theme', selectedTheme)
+  localStorage.setItem('dashboardTheme', selectedTheme)
+  const btn = document.getElementById('themeToggleBtn')
+  if (btn) {
+    btn.textContent = selectedTheme === 'light' ? '☀️ Light' : '🌙 Dark'
+  }
+}
+
+function toggleTheme() {
+  const current = document.body.getAttribute('data-theme') || getStoredTheme()
+  applyTheme(current === 'light' ? 'dark' : 'light')
+}
 
 // ── Utilities ────────────────────────────────────────────────────────────────
 function showToast(msg, type = 'success') {
@@ -946,7 +1075,7 @@ async function loadSchedules(withGroups = false) {
     })
 
     const renderRows = (list) => list.map(s => `
-      <tr style="border-bottom:1px solid rgba(48,54,61,.4)">
+      <tr class="list-row">
         <td style="padding:10px">#${s.id}</td>
         <td style="padding:10px">${s.type === 'daily' ? 'Daily' : 'Once'}</td>
         <td style="padding:10px">${escapeHtml(s.nextRunText || formatDateTime(s.nextRunAt))}</td>
@@ -961,15 +1090,15 @@ async function loadSchedules(withGroups = false) {
     el.innerHTML = groupIds.map(chatId => {
       const rows = grouped[chatId] || []
       return `
-        <div class="card" style="margin-bottom:14px;padding:0;overflow:hidden">
-          <div style="padding:12px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap">
+        <div class="card list-frame" style="margin-bottom:14px;padding:0;overflow:hidden">
+          <div class="list-head">
             <div style="font-weight:700">👥 ${escapeHtml(groupName(chatId))}</div>
             <div style="font-size:12px;color:var(--text-dim)">${rows.length} schedule</div>
           </div>
           <div style="overflow-x:auto">
-            <table style="width:100%;border-collapse:collapse;font-size:13px">
+            <table class="list-table" style="width:100%;border-collapse:collapse;font-size:13px">
               <thead>
-                <tr style="border-bottom:1px solid var(--border)">
+                <tr class="list-head-row">
                   <th style="text-align:left;padding:8px 10px;color:var(--text-dim)">ID</th>
                   <th style="text-align:left;padding:8px 10px;color:var(--text-dim)">Type</th>
                   <th style="text-align:left;padding:8px 10px;color:var(--text-dim)">Time</th>
@@ -1313,6 +1442,8 @@ function closeCcGuideModal() {
 async function loadCustomCommands() {
   try {
     const cmds = await fetch('/api/custom-commands').then(r => r.json())
+    window.ccCommandsCache = Array.isArray(cmds) ? cmds : []
+    window.ccRenderedCommands = []
     const el = document.getElementById('ccList')
     const stats = document.getElementById('ccStats')
     stats.textContent = `${cmds.length} custom command${cmds.length !== 1 ? 's' : ''} saved`
@@ -1322,15 +1453,6 @@ async function loadCustomCommands() {
       return
     }
 
-    const mediaIcon = { image: '🖼️', video: '🎬', audio: '🎵', document: '📄', url: '🔗' }
-    const buttonTypeText = (btn) => {
-      if (!btn) return ''
-      if (btn.name) return String(btn.name)
-      if (btn.quickReplyButton) return 'quick_reply'
-      if (btn.urlButton) return 'cta_url'
-      if (btn.callButton) return 'cta_call'
-      return 'button'
-    }
     const grouped = cmds.reduce((acc, cmd) => {
       const key = normalizeCcCategory(cmd.category)
       if (!acc[key]) acc[key] = []
@@ -1338,42 +1460,40 @@ async function loadCustomCommands() {
       return acc
     }, {})
     const categories = Object.keys(grouped).sort((a, b) => a.localeCompare(b))
-
     el.innerHTML = categories.map((category) => {
       const rows = grouped[category].map(c => {
-        const mediaBadge = c.mediaType ? `<span class="badge badge-blue" style="margin-left:6px;font-size:11px">${mediaIcon[c.mediaType]||'📎'} ${c.mediaType}</span>` : ''
-        const buttonsBadge = Array.isArray(c.buttons) && c.buttons.length
-          ? `<span class="badge badge-green" style="margin-left:6px;font-size:11px">🧩 ${c.buttons.length} button${c.buttons.length !== 1 ? 's' : ''}</span>${c.buttons.slice(0,3).map((btn) => `<span class="cc-badge-type">${escapeHtml(buttonTypeText(btn))}</span>`).join('')}`
-          : ''
-        const responseText = c.response ? escapeHtml(c.response.substring(0,60)) + (c.response.length>60?'…':'') : '<span style="color:var(--text-dim);font-style:italic">—</span>'
+        const cmdIndex = window.ccRenderedCommands.push(c) - 1
+        const desc = c.description ? escapeHtml(c.description) : '<span style="color:var(--text-dim);font-style:italic">—</span>'
         return `
-          <tr style="border-bottom:1px solid rgba(48,54,61,.4)">
+          <tr class="list-row">
             <td style="padding:10px 12px;white-space:nowrap">
               <code style="background:var(--surface2);padding:2px 8px;border-radius:4px;color:var(--green);font-size:12px">${escapeHtml(c.trigger)}</code>
             </td>
-            <td style="padding:10px 12px;max-width:260px">${responseText}${mediaBadge}${buttonsBadge}</td>
-            <td style="padding:10px 12px;color:var(--text-dim)">${escapeHtml(c.description || '—')}</td>
-            <td style="padding:10px 12px;text-align:right;white-space:nowrap">
-              <button class="btn btn-outline btn-sm" onclick="openCcEditModal('${escapeHtml(c.trigger)}','${escapeAttr(c.response||'')}','${escapeAttr(c.description||'')}','${escapeAttr(c.category||'General')}','${escapeAttr(c.mediaUrl||'')}','${escapeAttr(c.mediaType||'')}','${escapeAttr(c.fileName||'')}','${escapeAttr(JSON.stringify(c.buttons || []))}')" style="margin-right:6px">✏️ Edit</button>
-              <button class="btn btn-sm" style="background:rgba(248,81,73,.15);color:var(--red);border:1px solid rgba(248,81,73,.4)" onclick="deleteCustomCommand('${escapeHtml(c.trigger)}')">🗑️ Delete</button>
+            <td style="padding:10px 12px;color:var(--text-dim)">${desc}</td>
+            <td style="padding:10px 12px;text-align:right;white-space:nowrap;position:relative">
+              <select class="input" style="min-width:130px;height:34px;padding:4px 8px" onchange="handleCcActionSelect(this, ${cmdIndex})">
+                <option value="">Select</option>
+                <option value="view">👁 View</option>
+                <option value="edit">✏️ Edit</option>
+                <option value="delete" class="action-select-delete">🗑 Delete</option>
+              </select>
             </td>
           </tr>`
       }).join('')
 
       return `
-        <div style="margin-bottom:14px;border:1px solid var(--border);border-radius:10px;overflow:hidden">
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--surface2)">
+        <div class="list-frame" style="margin-bottom:14px;overflow:hidden">
+          <div class="list-head">
             <span style="font-size:13px;font-weight:700">📁 ${escapeHtml(category)}</span>
             <span class="badge badge-yellow">${grouped[category].length} command${grouped[category].length !== 1 ? 's' : ''}</span>
           </div>
-          <div style="overflow-x:auto">
-            <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <div style="overflow-x:auto;position:relative">
+            <table class="list-table" style="width:100%;border-collapse:collapse;font-size:13px">
               <thead>
-                <tr style="border-bottom:1px solid var(--border)">
+                <tr class="list-head-row">
                   <th style="text-align:left;padding:8px 12px;color:var(--text-dim);font-weight:600;white-space:nowrap">Trigger</th>
-                  <th style="text-align:left;padding:8px 12px;color:var(--text-dim);font-weight:600">Response / Media</th>
                   <th style="text-align:left;padding:8px 12px;color:var(--text-dim);font-weight:600">Description</th>
-                  <th style="padding:8px 12px;color:var(--text-dim);font-weight:600;white-space:nowrap">Actions</th>
+                  <th style="padding:8px 12px;color:var(--text-dim);font-weight:600;white-space:nowrap">Action</th>
                 </tr>
               </thead>
               <tbody>${rows}</tbody>
@@ -1387,6 +1507,79 @@ async function loadCustomCommands() {
   }
 }
 
+function handleCcActionSelect(selectEl, index) {
+  const action = (selectEl.value || '').toLowerCase()
+  if (!action) return
+
+  if (action === 'view') openCcViewModalByIndex(index)
+  else if (action === 'edit') openCcEditModalByIndex(index)
+  else if (action === 'delete') deleteCustomCommandByIndex(index)
+
+  selectEl.value = ''
+}
+
+function openCcViewModal(trigger, response, description, category, mediaUrl, mediaType, _fileName, buttons) {
+  document.getElementById('ccViewTriggerLabel').textContent = trigger || ''
+  document.getElementById('ccViewDescription').textContent = description || '—'
+  document.getElementById('ccViewCategory').textContent = category || 'General'
+  document.getElementById('ccViewMediaType').textContent = mediaType || 'text'
+  document.getElementById('ccViewMediaUrl').textContent = mediaUrl || '—'
+  document.getElementById('ccViewResponse').textContent = (response || '').replace(/\\n/g, '\n') || '—'
+  let parsedButtons = []
+  try {
+    parsedButtons = buttons ? JSON.parse(buttons) : []
+  } catch (_) {
+    parsedButtons = []
+  }
+  document.getElementById('ccViewButtons').textContent = String(Array.isArray(parsedButtons) ? parsedButtons.length : 0)
+  document.getElementById('ccViewModal').style.display = 'flex'
+}
+
+function getCcCommandByIndex(index) {
+  const list = Array.isArray(window.ccRenderedCommands) ? window.ccRenderedCommands : []
+  return list[index] || null
+}
+
+function openCcViewModalByIndex(index) {
+  const cmd = getCcCommandByIndex(index)
+  if (!cmd) return
+  openCcViewModal(
+    cmd.trigger || '',
+    cmd.response || '',
+    cmd.description || '',
+    cmd.category || 'General',
+    cmd.mediaUrl || '',
+    cmd.mediaType || '',
+    cmd.fileName || '',
+    JSON.stringify(cmd.buttons || [])
+  )
+}
+
+function openCcEditModalByIndex(index) {
+  const cmd = getCcCommandByIndex(index)
+  if (!cmd) return
+  openCcEditModal(
+    cmd.trigger || '',
+    cmd.response || '',
+    cmd.description || '',
+    cmd.category || 'General',
+    cmd.mediaUrl || '',
+    cmd.mediaType || '',
+    cmd.fileName || '',
+    JSON.stringify(cmd.buttons || [])
+  )
+}
+
+function deleteCustomCommandByIndex(index) {
+  const cmd = getCcCommandByIndex(index)
+  if (!cmd || !cmd.trigger) return
+  deleteCustomCommand(cmd.trigger)
+}
+
+function closeCcViewModal() {
+  document.getElementById('ccViewModal').style.display = 'none'
+}
+
 function escapeAttr(s) {
   return String(s).replace(/\\/g, '\\\\').replace(/'/g, '\\x27').replace(/"/g, '\\x22')
 }
@@ -1394,28 +1587,57 @@ function escapeAttr(s) {
 // ── Media source helpers ───────────────────────────────────────────────────
 function toggleMediaFields() {
   const type = document.getElementById('ccMediaType').value
+  const hasSelection = !!type
+  const isText = type === 'text'
   const isUrl = type === 'url'
-  const hasMedia = !!type
+  const hasMedia = hasSelection && !isText
 
+  document.getElementById('ccComposeFields').style.display = hasSelection ? '' : 'none'
+  document.getElementById('ccResponseWrap').style.display = hasSelection ? '' : 'none'
+  document.getElementById('ccButtonsWrap').style.display = hasSelection ? '' : 'none'
+  document.getElementById('ccCategoryWrap').style.display = hasSelection ? '' : 'none'
+  document.getElementById('ccDescriptionWrap').style.display = hasSelection ? '' : 'none'
+  document.getElementById('ccMediaSection').style.display = hasMedia ? '' : 'none'
   document.getElementById('ccMediaUrlWrap').style.display = hasMedia ? '' : 'none'
   document.getElementById('ccFileNameWrap').style.display = type === 'document' ? '' : 'none'
 
-  // URL type: hide the From URL / Upload toggle, show URL input directly
-  const srcToggle = document.getElementById('ccMediaUrlWrap').querySelector('div.form-group:first-child')
+  const responseLabel = document.getElementById('ccResponseLabel')
+  if (isText) {
+    responseLabel.textContent = 'Step 3: Respond'
+    document.getElementById('ccResponse').placeholder = 'Hello! Welcome to the group 👋'
+  } else if (hasMedia) {
+    responseLabel.textContent = 'Step 3: Caption (optional)'
+    document.getElementById('ccResponse').placeholder = type === 'url' ? 'Check this out 👇 (optional caption)' : 'Caption untuk media (optional)'
+  }
+
+  const srcToggle = document.getElementById('ccMediaSourceWrap')
   if (srcToggle) srcToggle.style.display = isUrl ? 'none' : ''
+
+  if (!hasMedia) {
+    document.getElementById('ccMediaUrl').value = ''
+    document.getElementById('ccUploadedUrl').value = ''
+    document.getElementById('ccMediaFile').value = ''
+    document.getElementById('ccUploadProgress').style.display = 'none'
+    document.getElementById('ccDropText').style.display = ''
+    return
+  }
+
   if (isUrl) {
     document.getElementById('ccUrlInput').style.display = ''
     document.getElementById('ccUploadInput').style.display = 'none'
     document.getElementById('ccMediaUrl').placeholder = 'https://example.com/page'
-    document.getElementById('ccResponse').placeholder = 'Check this out 👇 (optional caption)'
+    document.getElementById('ccUploadedUrl').value = ''
   } else {
-    document.getElementById('ccResponse').placeholder = 'Hello! Welcome to the group 👋'
     const ph = { image: 'https://example.com/photo.jpg', video: 'https://example.com/video.mp4', audio: 'https://example.com/music.mp3', document: 'https://example.com/file.pdf' }
     if (ph[type]) document.getElementById('ccMediaUrl').placeholder = ph[type]
+    if (document.getElementById('ccUploadInput').style.display !== '') {
+      setCcSource('upload')
+    }
   }
 }
 
 function setCcSource(mode) {
+  if ((document.getElementById('ccMediaType').value || '') === 'url') return
   const isUpload = mode === 'upload'
   document.getElementById('ccUrlInput').style.display = isUpload ? 'none' : ''
   document.getElementById('ccUploadInput').style.display = isUpload ? '' : 'none'
@@ -1666,7 +1888,7 @@ function addCcButtonRow(containerId, button = {}) {
         <input type="text" class="cc-button-label" placeholder="Click me" value="${escapeAttr(parsed.display_text || parsed.displayText || parsed.title || '')}" />
       </div>
       <div class="form-group" style="margin:0">
-        <label>Function</label>
+        <label>Category</label>
         <select class="cc-button-type" onchange="syncCcButtonRow(this)">
           <option value="quick_reply">quick_reply</option>
           <option value="url">cta_url</option>
@@ -1731,8 +1953,6 @@ function resetCcButtonRows(containerId, buttons = []) {
   container.innerHTML = ''
   if (Array.isArray(buttons) && buttons.length) {
     buttons.forEach((button) => addCcButtonRow(containerId, button))
-  } else {
-    addCcButtonRow(containerId)
   }
 }
 
@@ -1845,7 +2065,8 @@ function initDropZones() {
 }
 document.addEventListener('DOMContentLoaded', initDropZones)
 document.addEventListener('DOMContentLoaded', () => {
-  if (!document.getElementById('ccButtonsContainer')?.children.length) addCcButtonRow('ccButtonsContainer')
+  applyTheme(getStoredTheme())
+  toggleMediaFields()
 })
 
 async function addCustomCommand() {
@@ -1854,14 +2075,16 @@ async function addCustomCommand() {
   const description = document.getElementById('ccDescription').value.trim()
   const category = normalizeCcCategory(document.getElementById('ccCategory').value)
   const mediaType = document.getElementById('ccMediaType').value
+  const normalizedMediaType = mediaType === 'text' ? '' : mediaType
   const fileName = document.getElementById('ccFileName').value.trim()
 
+  if (!mediaType) { showToast('Please choose a media type first.', 'error'); return }
   if (!trigger) { showToast('Trigger is required.', 'error'); return }
 
   // Determine media URL: uploaded file takes precedence over URL input
   const isUploadMode = document.getElementById('ccUploadInput').style.display !== 'none'
   let mediaUrl = ''
-  if (mediaType) {
+  if (normalizedMediaType) {
     if (isUploadMode) {
       mediaUrl = document.getElementById('ccUploadedUrl').value.trim()
       if (!mediaUrl) {
@@ -1880,8 +2103,9 @@ async function addCustomCommand() {
     }
   }
 
+  if (mediaType === 'text' && !response) { showToast('Respond is required for text type.', 'error'); return }
   if (!response && !mediaUrl) { showToast('Add a response text or attach media / URL.', 'error'); return }
-  if (mediaType === 'url' && !mediaUrl) { showToast('Please enter a URL.', 'error'); return }
+  if (normalizedMediaType === 'url' && !mediaUrl) { showToast('Please enter a URL.', 'error'); return }
 
   let buttons = []
   try {
@@ -1893,8 +2117,8 @@ async function addCustomCommand() {
 
   try {
     const payload = { trigger, response, description, category }
-    if (mediaType && mediaUrl) { payload.mediaUrl = mediaUrl; payload.mediaType = mediaType }
-    if (mediaType === 'url' && mediaUrl) { payload.mediaUrl = mediaUrl; payload.mediaType = 'url' }
+    if (normalizedMediaType && mediaUrl) { payload.mediaUrl = mediaUrl; payload.mediaType = normalizedMediaType }
+    if (normalizedMediaType === 'url' && mediaUrl) { payload.mediaUrl = mediaUrl; payload.mediaType = 'url' }
     if (fileName) payload.fileName = fileName
     if (buttons.length) payload.buttons = buttons
 
