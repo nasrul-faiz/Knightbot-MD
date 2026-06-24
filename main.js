@@ -251,6 +251,20 @@ function normalizeCustomCommandButtons(buttons) {
                 const displayText = params.display_text || params.displayText || 'Call'
                 const phoneNumber = params.phone_number || params.phoneNumber || params.id
                 if (phoneNumber) templateButtons.push(button.index ? { index: button.index, callButton: { displayText, phoneNumber } } : { callButton: { displayText, phoneNumber } })
+            } else if (button.name === 'cta_copy') {
+                const displayText = params.display_text || params.displayText || 'Copy'
+                const copyCode = params.copy_code || params.copyCode || params.id || displayText
+                templateButtons.push(button.index ? { index: button.index, quickReplyButton: { displayText, id: copyCode } } : { quickReplyButton: { displayText, id: copyCode } })
+                legacyButtons.push({ buttonId: String(copyCode), buttonText: { displayText }, type: 1 })
+            } else if (button.name === 'single_select') {
+                const displayText = params.title || params.display_text || params.displayText || 'Choose Option'
+                const firstRowId = Array.isArray(params.sections)
+                    ? params.sections.flatMap(section => Array.isArray(section?.rows) ? section.rows : []).find(row => row?.id)?.id
+                    : ''
+                if (firstRowId) {
+                    templateButtons.push(button.index ? { index: button.index, quickReplyButton: { displayText, id: firstRowId } } : { quickReplyButton: { displayText, id: firstRowId } })
+                    legacyButtons.push({ buttonId: String(firstRowId), buttonText: { displayText }, type: 1 })
+                }
             }
             continue
         }

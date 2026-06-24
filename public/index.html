@@ -129,6 +129,53 @@
   .toast.success { border-color: var(--green); }
   .toast.error { border-color: var(--red); }
 
+  /* Custom command polish */
+  .cc-grid { gap: 18px; }
+  .cc-panel {
+    background:
+      radial-gradient(120% 120% at 110% -20%, rgba(34,197,94,.12), transparent 52%),
+      radial-gradient(120% 120% at -10% -30%, rgba(59,130,246,.10), transparent 45%),
+      var(--surface);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.25);
+  }
+  .cc-help {
+    border: 1px dashed rgba(255,255,255,.16);
+    border-radius: 10px;
+    padding: 10px 12px;
+    background: rgba(255,255,255,.02);
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+  .cc-button-row {
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 10px;
+    padding: 10px;
+    background: rgba(0,0,0,.18);
+  }
+  .cc-button-extra { margin-top: 8px; }
+  .cc-button-hint { font-size: 11px; color: var(--text-dim); margin-top: 5px; }
+  .cc-button-extra textarea {
+    min-height: 86px;
+    resize: vertical;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 12px;
+  }
+  .cc-badge-type {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid rgba(34,197,94,.35);
+    background: rgba(34,197,94,.12);
+    color: #8bf4b4;
+    font-size: 11px;
+    margin-left: 6px;
+  }
+
   @media (max-width: 600px) {
     .status-card { flex-direction: column; text-align: center; }
     .status-meta { justify-content: center; }
@@ -392,10 +439,10 @@
 
   <!-- Custom Commands Tab -->
   <div id="tab-customcmds" style="display:none">
-    <div class="grid grid-2" style="margin-bottom:16px">
+    <div class="grid grid-2 cc-grid" style="margin-bottom:16px">
 
       <!-- Add Command Form -->
-      <div class="card">
+      <div class="card cc-panel">
         <div class="card-title">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           Add Custom Command
@@ -414,6 +461,7 @@
         </div>
         <div class="form-group">
           <label>Buttons <span style="color:var(--text-dim)">(optional)</span></label>
+          <div class="cc-help" style="margin-bottom:8px">Supported UI types: <b style="color:var(--text)">quick_reply</b>, <b style="color:var(--text)">cta_url</b>, <b style="color:var(--text)">cta_call</b>, <b style="color:var(--text)">cta_copy</b>, <b style="color:var(--text)">single_select</b>.</div>
           <div id="ccButtonsContainer" style="display:flex;flex-direction:column;gap:8px"></div>
           <button type="button" class="btn btn-outline btn-sm" onclick="addCcButtonRow('ccButtonsContainer')" style="margin-top:8px">+ Add Button</button>
         </div>
@@ -478,13 +526,13 @@
       </div>
 
       <!-- Info Panel -->
-      <div class="card" style="display:flex;flex-direction:column;gap:12px">
+      <div class="card cc-panel" style="display:flex;flex-direction:column;gap:12px">
         <div class="card-title">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           Custom Command Guide
         </div>
         <div style="font-size:13px;color:var(--text-dim);line-height:1.7">
-          Open panduan untuk lihat cara trigger, response, media, dan tips penggunaan custom command.
+          Bina command berbutang dengan format visual. Dashboard ini terus hasilkan struktur JSON yang serasi dengan interactive message di atexovi-baileys.
         </div>
         <button class="btn btn-outline" onclick="openCcGuideModal()">📘 How It Works</button>
         <div id="ccStats" style="font-size:13px;color:var(--text-dim);padding:10px;background:var(--surface2);border-radius:8px;text-align:center"></div>
@@ -593,7 +641,7 @@
         <div style="font-size:13px;color:var(--text-dim);line-height:1.7">
           <b style="color:var(--text)">Trigger</b> — command yang user taip di WhatsApp. Contoh: <code style="background:var(--surface2);padding:1px 6px;border-radius:3px">.hello</code><br><br>
           <b style="color:var(--text)">Response</b> — mesej balasan bot (boleh teks, emoji, caption media).<br><br>
-          <b style="color:var(--text)">Buttons</b> — tambah nama tombol dan fungsi. Pilihan fungsi: quick reply, URL, call, dan WhatsApp.<br><br>
+          <b style="color:var(--text)">Buttons</b> — sokong semua type di README package: quick reply, URL, call, copy, dan single select (list).<br><br>
           <b style="color:var(--text)">Category</b> — untuk susun command dalam dashboard (General, Fun, Utility, dll).<br><br>
           <b style="color:var(--text)">Works in</b> — group dan private chat.<br><br>
           <b style="color:var(--text)">Priority</b> — custom command jalan selepas built-in command, jadi tak override command asal bot.
@@ -1356,6 +1404,14 @@ async function loadCustomCommands() {
     }
 
     const mediaIcon = { image: '🖼️', video: '🎬', audio: '🎵', document: '📄', url: '🔗' }
+    const buttonTypeText = (btn) => {
+      if (!btn) return ''
+      if (btn.name) return String(btn.name)
+      if (btn.quickReplyButton) return 'quick_reply'
+      if (btn.urlButton) return 'cta_url'
+      if (btn.callButton) return 'cta_call'
+      return 'button'
+    }
     const grouped = cmds.reduce((acc, cmd) => {
       const key = normalizeCcCategory(cmd.category)
       if (!acc[key]) acc[key] = []
@@ -1367,7 +1423,9 @@ async function loadCustomCommands() {
     el.innerHTML = categories.map((category) => {
       const rows = grouped[category].map(c => {
         const mediaBadge = c.mediaType ? `<span class="badge badge-blue" style="margin-left:6px;font-size:11px">${mediaIcon[c.mediaType]||'📎'} ${c.mediaType}</span>` : ''
-        const buttonsBadge = Array.isArray(c.buttons) && c.buttons.length ? `<span class="badge badge-green" style="margin-left:6px;font-size:11px">🧩 ${c.buttons.length} button${c.buttons.length !== 1 ? 's' : ''}</span>` : ''
+        const buttonsBadge = Array.isArray(c.buttons) && c.buttons.length
+          ? `<span class="badge badge-green" style="margin-left:6px;font-size:11px">🧩 ${c.buttons.length} button${c.buttons.length !== 1 ? 's' : ''}</span>${c.buttons.slice(0,3).map((btn) => `<span class="cc-badge-type">${escapeHtml(buttonTypeText(btn))}</span>`).join('')}`
+          : ''
         const responseText = c.response ? escapeHtml(c.response.substring(0,60)) + (c.response.length>60?'…':'') : '<span style="color:var(--text-dim);font-style:italic">—</span>'
         return `
           <tr style="border-bottom:1px solid rgba(48,54,61,.4)">
@@ -1549,14 +1607,115 @@ async function uploadMenuMedia() {
 function getButtonTypeMeta(type) {
   switch (type) {
     case 'url':
-      return { valueLabel: 'URL', placeholder: 'https://example.com' }
+      return {
+        targetLabel: 'URL',
+        placeholder: 'https://example.com',
+        extraLabel: '',
+        extraPlaceholder: '',
+        showTarget: true,
+        showExtra: false,
+        hint: 'Opens external link in WhatsApp.'
+      }
     case 'call':
-      return { valueLabel: 'Phone Number', placeholder: '+628123456789' }
+      return {
+        targetLabel: 'Phone Number',
+        placeholder: '+628123456789',
+        extraLabel: '',
+        extraPlaceholder: '',
+        showTarget: true,
+        showExtra: false,
+        hint: 'Shows call action to a phone number.'
+      }
     case 'whatsapp':
-      return { valueLabel: 'WhatsApp Number', placeholder: '628123456789' }
+      return {
+        targetLabel: 'WhatsApp Number',
+        placeholder: '628123456789',
+        extraLabel: '',
+        extraPlaceholder: '',
+        showTarget: true,
+        showExtra: false,
+        hint: 'Builds a WhatsApp link automatically.'
+      }
+    case 'copy':
+      return {
+        targetLabel: 'Copy Text / Link',
+        placeholder: 'https://github.com/atex-ovi',
+        extraLabel: '',
+        extraPlaceholder: '',
+        showTarget: true,
+        showExtra: false,
+        hint: 'Copies provided text/link to clipboard.'
+      }
+    case 'single_select':
+      return {
+        targetLabel: 'List Title',
+        placeholder: 'Select Option',
+        extraLabel: 'Rows (one per line: id|title|description|header)',
+        extraPlaceholder: 'plan_basic|Basic Plan|Good for starter|Plan\nplan_pro|Pro Plan|For power user|Plan',
+        showTarget: true,
+        showExtra: true,
+        hint: 'Creates WhatsApp list button with selectable rows.'
+      }
     default:
-      return { valueLabel: 'Button Value', placeholder: '.button' }
+      return {
+        targetLabel: 'Button ID (optional)',
+        placeholder: '.menu',
+        extraLabel: '',
+        extraPlaceholder: '',
+        showTarget: true,
+        showExtra: false,
+        hint: 'Sends quick reply id back to bot.'
+      }
   }
+}
+
+function buildRowsTextFromSections(sections = []) {
+  const lines = []
+  for (const section of sections) {
+    const rows = Array.isArray(section?.rows) ? section.rows : []
+    for (const row of rows) {
+      const id = row?.id || ''
+      const title = row?.title || ''
+      const desc = row?.description || ''
+      const header = row?.header || ''
+      if (!id && !title) continue
+      lines.push([id, title, desc, header].map((v) => String(v || '').replace(/\|/g, '/')).join('|'))
+    }
+  }
+  return lines.join('\n')
+}
+
+function parseSingleSelectRowsInput(raw) {
+  const lines = String(raw || '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+
+  const rows = []
+  for (const line of lines) {
+    const parts = line.split('|')
+    const id = (parts[0] || '').trim()
+    const title = (parts[1] || '').trim()
+    const description = (parts[2] || '').trim()
+    const header = (parts[3] || '').trim()
+
+    if (!id || !title) {
+      throw new Error('Single select rows must include id and title. Format: id|title|description|header')
+    }
+
+    rows.push({
+      id,
+      title,
+      ...(description ? { description } : {}),
+      ...(header ? { header } : {})
+    })
+  }
+
+  if (!rows.length) {
+    throw new Error('Single select button needs at least 1 row.')
+  }
+
+  return rows
 }
 
 function addCcButtonRow(containerId, button = {}) {
@@ -1590,7 +1749,18 @@ function addCcButtonRow(containerId, button = {}) {
     } else if (button.buttonParamsJson) {
       try {
         parsed = JSON.parse(button.buttonParamsJson)
-        type = button.name || 'quick_reply'
+        const rawName = String(button.name || 'quick_reply').toLowerCase()
+        if (rawName === 'cta_copy') type = 'copy'
+        else if (rawName === 'cta_call') type = 'call'
+        else if (rawName === 'cta_url') {
+          const url = String(parsed.url || parsed.merchant_url || '')
+          type = /^https?:\/\/wa\.me\//i.test(url) ? 'whatsapp' : 'url'
+        } else if (rawName === 'single_select') type = 'single_select'
+        else type = 'quick_reply'
+
+        if (rawName === 'single_select') {
+          parsed.rowsText = buildRowsTextFromSections(parsed.sections)
+        }
       } catch (_) {
         parsed = {}
       }
@@ -1601,32 +1771,53 @@ function addCcButtonRow(containerId, button = {}) {
   }
 
   const meta = getButtonTypeMeta(type)
+  const currentTarget =
+    type === 'quick_reply' ? (parsed.id || parsed.buttonId || '') :
+    type === 'url' ? (parsed.url || parsed.link || '') :
+    type === 'whatsapp' ? (parsed.phone_number || parsed.phoneNumber || '') :
+    type === 'call' ? (parsed.phone_number || parsed.phoneNumber || '') :
+    type === 'copy' ? (parsed.copy_code || parsed.copyCode || '') :
+    type === 'single_select' ? (parsed.title || parsed.display_text || parsed.displayText || '') :
+    ''
+
   const row = document.createElement('div')
   row.className = 'cc-button-row'
-  row.style.cssText = 'display:grid;grid-template-columns:1.2fr .8fr 1.2fr auto;gap:8px;align-items:end'
   row.innerHTML = `
-    <div class="form-group" style="margin:0">
-      <label>Button Name</label>
-      <input type="text" class="cc-button-label" placeholder="Click me" value="${escapeAttr(parsed.display_text || parsed.displayText || '')}" />
+    <div style="display:grid;grid-template-columns:1.2fr .9fr 1.2fr auto;gap:8px;align-items:end">
+      <div class="form-group" style="margin:0">
+        <label>Button Name</label>
+        <input type="text" class="cc-button-label" placeholder="Click me" value="${escapeAttr(parsed.display_text || parsed.displayText || parsed.title || '')}" />
+      </div>
+      <div class="form-group" style="margin:0">
+        <label>Function</label>
+        <select class="cc-button-type" onchange="syncCcButtonRow(this)">
+          <option value="quick_reply">quick_reply</option>
+          <option value="url">cta_url</option>
+          <option value="call">cta_call</option>
+          <option value="copy">cta_copy</option>
+          <option value="single_select">single_select</option>
+          <option value="whatsapp">whatsapp shortcut</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="cc-button-target-label">${meta.targetLabel}</label>
+        <input type="text" class="cc-button-target" placeholder="${meta.placeholder}" value="${escapeAttr(currentTarget)}" />
+      </div>
+      <button type="button" class="btn btn-sm" style="background:rgba(248,81,73,.15);color:var(--red);border:1px solid rgba(248,81,73,.4);height:38px" onclick="removeCcButtonRow(this)">Remove</button>
     </div>
-    <div class="form-group" style="margin:0">
-      <label>Function</label>
-      <select class="cc-button-type" onchange="syncCcButtonRow(this)">
-        <option value="quick_reply">Quick Reply</option>
-        <option value="url">URL</option>
-        <option value="call">Call</option>
-        <option value="whatsapp">WhatsApp</option>
-      </select>
+    <div class="form-group cc-button-extra" style="margin:0;display:none">
+      <label class="cc-button-extra-label"></label>
+      <textarea class="cc-button-extra-input" placeholder=""></textarea>
     </div>
-    <div class="form-group" style="margin:0">
-      <label class="cc-button-target-label">${meta.valueLabel}</label>
-      <input type="text" class="cc-button-target" placeholder="${meta.placeholder}" value="${escapeAttr(parsed.id || parsed.url || parsed.phone_number || parsed.phoneNumber || '')}" />
-    </div>
-    <button type="button" class="btn btn-sm" style="background:rgba(248,81,73,.15);color:var(--red);border:1px solid rgba(248,81,73,.4);height:38px" onclick="removeCcButtonRow(this)">Remove</button>
+    <div class="cc-button-hint"></div>
   `
+
   container.appendChild(row)
   const typeSelect = row.querySelector('.cc-button-type')
   typeSelect.value = type
+  if (parsed.rowsText) {
+    row.querySelector('.cc-button-extra-input').value = parsed.rowsText
+  }
   syncCcButtonRow(typeSelect)
 }
 
@@ -1639,8 +1830,22 @@ function syncCcButtonRow(selectEl) {
   const row = selectEl.closest('.cc-button-row')
   if (!row) return
   const meta = getButtonTypeMeta(selectEl.value)
-  row.querySelector('.cc-button-target-label').textContent = meta.valueLabel
-  row.querySelector('.cc-button-target').placeholder = meta.placeholder
+
+  const targetWrap = row.querySelector('.cc-button-target').closest('.form-group')
+  const targetLabel = row.querySelector('.cc-button-target-label')
+  const targetInput = row.querySelector('.cc-button-target')
+  targetLabel.textContent = meta.targetLabel
+  targetInput.placeholder = meta.placeholder
+  targetWrap.style.display = meta.showTarget ? '' : 'none'
+
+  const extraWrap = row.querySelector('.cc-button-extra')
+  const extraLabel = row.querySelector('.cc-button-extra-label')
+  const extraInput = row.querySelector('.cc-button-extra-input')
+  extraWrap.style.display = meta.showExtra ? '' : 'none'
+  extraLabel.textContent = meta.extraLabel
+  extraInput.placeholder = meta.extraPlaceholder
+
+  row.querySelector('.cc-button-hint').textContent = meta.hint || ''
 }
 
 function resetCcButtonRows(containerId, buttons = []) {
@@ -1664,47 +1869,80 @@ function collectCcButtons(containerId) {
     const label = row.querySelector('.cc-button-label').value.trim()
     const type = row.querySelector('.cc-button-type').value
     const target = row.querySelector('.cc-button-target').value.trim()
+    const extra = row.querySelector('.cc-button-extra-input').value.trim()
 
-    if (!label && !target) continue
+    if (!label && !target && !extra) continue
     if (!label) throw new Error('Button name is required.')
-
-    if (type !== 'quick_reply' && !target) {
-      throw new Error('Button value is required.')
-    }
 
     const index = buttons.length + 1
     if (type === 'quick_reply') {
       buttons.push({
         index,
-        quickReplyButton: {
-          displayText: label,
+        name: 'quick_reply',
+        buttonParamsJson: JSON.stringify({
+          display_text: label,
           id: target || label
-        }
+        })
       })
     } else if (type === 'url') {
+      if (!target) throw new Error('URL is required for cta_url button.')
       buttons.push({
         index,
-        urlButton: {
-          displayText: label,
-          url: target
-        }
+        name: 'cta_url',
+        buttonParamsJson: JSON.stringify({
+          display_text: label,
+          url: target,
+          merchant_url: target
+        })
       })
     } else if (type === 'call') {
+      if (!target) throw new Error('Phone number is required for cta_call button.')
       buttons.push({
         index,
-        callButton: {
-          displayText: label,
-          phoneNumber: target
-        }
+        name: 'cta_call',
+        buttonParamsJson: JSON.stringify({
+          display_text: label,
+          phone_number: target
+        })
+      })
+    } else if (type === 'copy') {
+      if (!target) throw new Error('Copy text/link is required for cta_copy button.')
+      buttons.push({
+        index,
+        name: 'cta_copy',
+        buttonParamsJson: JSON.stringify({
+          display_text: label,
+          copy_code: target
+        })
+      })
+    } else if (type === 'single_select') {
+      if (!target) throw new Error('List title is required for single_select button.')
+      const rowsData = parseSingleSelectRowsInput(extra)
+      buttons.push({
+        index,
+        name: 'single_select',
+        buttonParamsJson: JSON.stringify({
+          title: target,
+          sections: [
+            {
+              title: 'Options',
+              rows: rowsData
+            }
+          ]
+        })
       })
     } else if (type === 'whatsapp') {
       const digits = String(target).replace(/\D/g, '')
+      if (!digits) throw new Error('WhatsApp number is required.')
+      const waUrl = `https://wa.me/${digits}`
       buttons.push({
         index,
-        urlButton: {
-          displayText: label,
-          url: `https://wa.me/${digits}`
-        }
+        name: 'cta_url',
+        buttonParamsJson: JSON.stringify({
+          display_text: label,
+          url: waUrl,
+          merchant_url: waUrl
+        })
       })
     }
   }
