@@ -227,8 +227,6 @@ async function helpCommand(sock, chatId, message) {
 Join our channel for updates:`;
 
     try {
-        const imagePath = path.join(__dirname, '../assets/bot_image.jpg');
-
         await sendConfiguredPromoMessage(sock, chatId, settings, {
             textKey: 'menuMessage',
             mediaKey: 'menuMediaUrl',
