@@ -312,7 +312,11 @@ app.get('/api/settings', (req, res) => {
         author: settings.author,
         description: settings.description,
         aliveMessage: settings.aliveMessage,
+        aliveMediaUrl: settings.aliveMediaUrl,
+        aliveButtons: settings.aliveButtons,
         menuMessage: settings.menuMessage,
+        menuMediaUrl: settings.menuMediaUrl,
+        menuButtons: settings.menuButtons,
         version: settings.version,
     })
 })
@@ -320,7 +324,21 @@ app.get('/api/settings', (req, res) => {
 // ── API: Settings POST ──────────────────────────────────────────────────────
 app.post('/api/settings', (req, res) => {
     try {
-        const { botName, botOwner, ownerNumber, commandMode, timeZone, packname, description, aliveMessage, menuMessage } = req.body
+        const {
+            botName,
+            botOwner,
+            ownerNumber,
+            commandMode,
+            timeZone,
+            packname,
+            description,
+            aliveMessage,
+            aliveMediaUrl,
+            aliveButtons,
+            menuMessage,
+            menuMediaUrl,
+            menuButtons,
+        } = req.body
         const settingsPath = path.join(__dirname, 'settings.js')
         let content = fs.readFileSync(settingsPath, 'utf8')
 
@@ -351,7 +369,11 @@ app.post('/api/settings', (req, res) => {
         if (packname !== undefined) replace('packname', packname)
         if (description !== undefined) replace('description', description)
         if (aliveMessage !== undefined) replace('aliveMessage', aliveMessage)
+        if (aliveMediaUrl !== undefined) replace('aliveMediaUrl', aliveMediaUrl)
+        if (aliveButtons !== undefined) replace('aliveButtons', aliveButtons)
         if (menuMessage !== undefined) replace('menuMessage', menuMessage)
+        if (menuMediaUrl !== undefined) replace('menuMediaUrl', menuMediaUrl)
+        if (menuButtons !== undefined) replace('menuButtons', menuButtons)
 
         fs.writeFileSync(settingsPath, content, 'utf8')
 

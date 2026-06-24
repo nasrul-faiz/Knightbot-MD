@@ -11,7 +11,11 @@ const settings = {
   storeWriteInterval: 10000,
   description: 'This is a bot for managing group commands and automating tasks.',
   aliveMessage: '',
+  aliveMediaUrl: '',
+  aliveButtons: '',
   menuMessage: '',
+  menuMediaUrl: '',
+  menuButtons: '',
   version: "3.0.7",
   updateZipUrl: "https://github.com/mruniquehacker/Knightbot-MD/archive/refs/heads/main.zip",
 };

@@ -1,15 +1,5 @@
 const settings = require('../settings');
-const fs = require('fs');
-const path = require('path');
-
-function renderTemplate(text = '', replacements = {}) {
-    let output = String(text || '')
-    for (const [key, value] of Object.entries(replacements)) {
-        const pattern = new RegExp(`\\{${key}\\}`, 'gi')
-        output = output.replace(pattern, String(value))
-    }
-    return output
-}
+const { sendConfiguredPromoMessage } = require('../lib/dashboardPromos');
 
 async function helpCommand(sock, chatId, message) {
     const defaultHelpMessage = `
@@ -236,52 +226,25 @@ async function helpCommand(sock, chatId, message) {
 
 Join our channel for updates:`;
 
-    const configuredMenuMessage = String(settings.menuMessage || '').trim()
-    const helpMessage = configuredMenuMessage
-        ? renderTemplate(configuredMenuMessage, {
-            botName: settings.botName || 'KnightBot-MD',
-            version: settings.version || '3.0.0',
-            owner: settings.botOwner || 'Owner',
-        })
-        : defaultHelpMessage
-
     try {
         const imagePath = path.join(__dirname, '../assets/bot_image.jpg');
-        
-        if (fs.existsSync(imagePath)) {
-            const imageBuffer = fs.readFileSync(imagePath);
-            
-            await sock.sendMessage(chatId, {
-                image: imageBuffer,
-                caption: helpMessage,
-                contextInfo: {
-                    forwardingScore: 1,
-                    isForwarded: true,
-                    forwardedNewsletterMessageInfo: {
-                        newsletterJid: '120363161513685998@newsletter',
-                        newsletterName: 'KnightBot MD',
-                        serverMessageId: -1
-                    }
-                }
-            },{ quoted: message });
-        } else {
-            console.error('Bot image not found at:', imagePath);
-            await sock.sendMessage(chatId, { 
-                text: helpMessage,
-                contextInfo: {
-                    forwardingScore: 1,
-                    isForwarded: true,
-                    forwardedNewsletterMessageInfo: {
-                        newsletterJid: '120363161513685998@newsletter',
-                        newsletterName: 'KnightBot MD by Mr Unique Hacker',
-                        serverMessageId: -1
-                    } 
-                }
-            });
-        }
+
+        await sendConfiguredPromoMessage(sock, chatId, settings, {
+            textKey: 'menuMessage',
+            mediaKey: 'menuMediaUrl',
+            buttonsKey: 'menuButtons',
+            fallbackText: defaultHelpMessage,
+            fallbackImagePath: 'assets/bot_image.jpg',
+            replacements: {
+                botName: settings.botName || 'KnightBot-MD',
+                version: settings.version || '3.0.0',
+                owner: settings.botOwner || 'Owner',
+            },
+            quoted: message,
+        });
     } catch (error) {
         console.error('Error in help command:', error);
-        await sock.sendMessage(chatId, { text: helpMessage });
+        await sock.sendMessage(chatId, { text: defaultHelpMessage });
     }
 }
 

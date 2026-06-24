@@ -216,8 +216,34 @@
           <textarea id="aliveMessage" rows="5" placeholder="Custom text for .alive"></textarea>
         </div>
         <div class="form-group">
+          <label>Alive Image URL <span style="color:var(--text-dim)">(optional)</span></label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="text" id="aliveMediaUrl" placeholder="https://example.com/alive.jpg atau /uploads/..." />
+            <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('aliveMediaFile').click()">Upload</button>
+          </div>
+          <input type="file" id="aliveMediaFile" accept="image/*" style="display:none" onchange="uploadAliveMedia()" />
+          <div id="aliveMediaUploadStatus" style="font-size:12px;color:var(--text-dim);margin-top:6px"></div>
+        </div>
+        <div class="form-group">
+          <label>Alive Buttons (JSON) <span style="color:var(--text-dim)">(optional)</span></label>
+          <textarea id="aliveButtons" rows="4" placeholder='[{"name":"quick_reply","buttonParamsJson":"{\"display_text\":\"Menu\",\"id\":\".menu\"}"}]'></textarea>
+        </div>
+        <div class="form-group">
           <label>Menu Message <span style="color:var(--text-dim)">(optional, kosongkan untuk menu default)</span></label>
           <textarea id="menuMessage" rows="6" placeholder="Custom text for .menu"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Menu Image URL <span style="color:var(--text-dim)">(optional)</span></label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="text" id="menuMediaUrl" placeholder="https://example.com/menu.jpg atau /uploads/..." />
+            <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('menuMediaFile').click()">Upload</button>
+          </div>
+          <input type="file" id="menuMediaFile" accept="image/*" style="display:none" onchange="uploadMenuMedia()" />
+          <div id="menuMediaUploadStatus" style="font-size:12px;color:var(--text-dim);margin-top:6px"></div>
+        </div>
+        <div class="form-group">
+          <label>Menu Buttons (JSON) <span style="color:var(--text-dim)">(optional)</span></label>
+          <textarea id="menuButtons" rows="5" placeholder='[{"name":"quick_reply","buttonParamsJson":"{\"display_text\":\"Ping\",\"id\":\".ping\"}"}]'></textarea>
         </div>
       </div>
       <div class="card">
@@ -772,7 +798,11 @@ async function loadSettings() {
     document.getElementById('packname').value = data.packname || ''
     document.getElementById('description').value = data.description || ''
     document.getElementById('aliveMessage').value = data.aliveMessage || ''
+    document.getElementById('aliveMediaUrl').value = data.aliveMediaUrl || ''
+    document.getElementById('aliveButtons').value = data.aliveButtons || ''
     document.getElementById('menuMessage').value = data.menuMessage || ''
+    document.getElementById('menuMediaUrl').value = data.menuMediaUrl || ''
+    document.getElementById('menuButtons').value = data.menuButtons || ''
   } catch(e) {}
 }
 
@@ -786,7 +816,11 @@ async function saveSettings() {
     packname: document.getElementById('packname').value.trim(),
     description: document.getElementById('description').value.trim(),
     aliveMessage: document.getElementById('aliveMessage').value,
+    aliveMediaUrl: document.getElementById('aliveMediaUrl').value.trim(),
+    aliveButtons: document.getElementById('aliveButtons').value,
     menuMessage: document.getElementById('menuMessage').value,
+    menuMediaUrl: document.getElementById('menuMediaUrl').value.trim(),
+    menuButtons: document.getElementById('menuButtons').value,
   }
   try {
     const res = await fetch('/api/settings', {
@@ -1468,6 +1502,48 @@ function handleCcEditFileChange() {
   const file = document.getElementById('ccEditMediaFile').files[0]
   if (!file) return
   uploadMediaFile(file, 'ccEditUploadBar', 'ccEditUploadStatus', 'ccEditUploadProgress', 'ccEditUploadedUrl', 'ccEditDropText')
+}
+
+async function uploadAliveMedia() {
+  const file = document.getElementById('aliveMediaFile').files[0]
+  const statusEl = document.getElementById('aliveMediaUploadStatus')
+  if (!file || !statusEl) return
+
+  statusEl.textContent = `Uploading ${file.name}...`
+  try {
+    const fd = new FormData()
+    fd.append('file', file)
+    const res = await fetch('/api/upload-media', { method: 'POST', body: fd }).then(r => r.json())
+    if (res.success) {
+      document.getElementById('aliveMediaUrl').value = res.url
+      statusEl.textContent = `✅ ${res.originalName} uploaded`
+    } else {
+      statusEl.textContent = `❌ ${res.error || 'Upload failed'}`
+    }
+  } catch (_) {
+    statusEl.textContent = '❌ Upload failed'
+  }
+}
+
+async function uploadMenuMedia() {
+  const file = document.getElementById('menuMediaFile').files[0]
+  const statusEl = document.getElementById('menuMediaUploadStatus')
+  if (!file || !statusEl) return
+
+  statusEl.textContent = `Uploading ${file.name}...`
+  try {
+    const fd = new FormData()
+    fd.append('file', file)
+    const res = await fetch('/api/upload-media', { method: 'POST', body: fd }).then(r => r.json())
+    if (res.success) {
+      document.getElementById('menuMediaUrl').value = res.url
+      statusEl.textContent = `✅ ${res.originalName} uploaded`
+    } else {
+      statusEl.textContent = `❌ ${res.error || 'Upload failed'}`
+    }
+  } catch (_) {
+    statusEl.textContent = '❌ Upload failed'
+  }
 }
 
 function getButtonTypeMeta(type) {
