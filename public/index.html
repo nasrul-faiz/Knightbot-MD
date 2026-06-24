@@ -101,6 +101,9 @@
   .status-name { font-family: 'Inter', sans-serif; font-size: 20px; font-weight: 600; letter-spacing: -.01em; }
   .status-number { font-size: 13px; color: var(--text-dim); margin-top: 2px; }
   .status-meta { display: flex; gap: 12px; margin-top: 10px; flex-wrap: wrap; }
+  .status-meta-item { font-size: 12px; font-weight: 600; color: var(--text-dim); }
+  .status-meta-item.online { color: var(--green); }
+  .status-meta-item.offline { color: var(--red); }
   .badge { padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
   .badge-green { background: rgba(34,197,94,.15); color: var(--green); }
   .badge-blue { background: rgba(59,130,246,.15); color: var(--blue); }
@@ -491,7 +494,7 @@
         </div>
         <div class="form-group" id="scheduleDateWrap" style="display:none">
           <label>Date (YYYY-MM-DD)</label>
-          <input type="date" id="scheduleDate" />
+          <input type="date" id="scheduleDate" style="max-width:190px" />
         </div>
         <div class="form-group">
           <label>Time (HH:MM)</label>
@@ -876,9 +879,9 @@ async function loadStatus() {
 
     const meta = document.getElementById('statusMeta')
     meta.innerHTML = `
-      <span class="badge ${connected ? 'badge-green' : 'badge-red'}">${connected ? '🟢 Online' : '🔴 Offline'}</span>
-      <span class="badge badge-blue">v${data.version}</span>
-      <span class="badge badge-yellow">${data.commandMode === 'public' ? '🌐 Public' : '🔒 Private'}</span>
+      <span class="status-meta-item ${connected ? 'online' : 'offline'}">${connected ? '🟢 Online' : '🔴 Offline'}</span>
+      <span class="status-meta-item">• v${data.version}</span>
+      <span class="status-meta-item">• ${data.commandMode === 'public' ? '🌐 Public' : '🔒 Private'}</span>
     `
 
   } catch(e) {
