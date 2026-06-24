@@ -81,6 +81,55 @@ function readJSON(filePath, fallback = null) {
     }
 }
 
+const profilePicCache = {
+    jid: null,
+    url: null,
+    fetchedAt: 0,
+    ttlMs: 2 * 60 * 1000,
+}
+
+function resolveSelfJid(account, sockUser) {
+    const raw = String(account?.id || sockUser?.id || '').trim()
+    if (!raw) return null
+
+    if (raw.includes(':')) {
+        return `${raw.split(':')[0]}@s.whatsapp.net`
+    }
+
+    if (raw.endsWith('@s.whatsapp.net') || raw.endsWith('@lid')) return raw
+    if (/^\d+$/.test(raw)) return `${raw}@s.whatsapp.net`
+    return raw
+}
+
+async function getLiveProfilePic(account) {
+    const sock = global.botSocket
+    if (!sock || typeof sock.profilePictureUrl !== 'function') return null
+
+    const jid = resolveSelfJid(account, sock.user)
+    if (!jid) return null
+
+    const now = Date.now()
+    if (
+        profilePicCache.jid === jid &&
+        profilePicCache.url &&
+        now - profilePicCache.fetchedAt < profilePicCache.ttlMs
+    ) {
+        return profilePicCache.url
+    }
+
+    try {
+        const url = await sock.profilePictureUrl(jid, 'image')
+        if (url) {
+            profilePicCache.jid = jid
+            profilePicCache.url = url
+            profilePicCache.fetchedAt = now
+            return url
+        }
+    } catch (_) {}
+
+    return null
+}
+
 function getTotalMessagesForChat(messageCount, chatId) {
     if (!messageCount || !chatId) return 0
 
@@ -173,7 +222,7 @@ function getGroupIdsFromMessageCount(messageCount) {
 }
 
 // ── API: Bot status ─────────────────────────────────────────────────────────
-app.get('/api/status', (req, res) => {
+app.get('/api/status', async (req, res) => {
     const creds = readJSON('./session/creds.json')
     const settings = readJSON('./settings.json') || require('./settings')
     const banned = readJSON('./data/banned.json', [])
@@ -200,10 +249,23 @@ app.get('/api/status', (req, res) => {
     if (process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID) platform = 'Railway'
     else if (process.env.REPL_ID || process.env.REPLIT_DB_URL) platform = 'Replit'
 
+    let liveProfilePic = null
+    try {
+        liveProfilePic = await getLiveProfilePic(account)
+    } catch (_) {}
+
+    const profilePic = liveProfilePic || botInfo.profilePic || null
+    if (liveProfilePic && liveProfilePic !== botInfo.profilePic) {
+        try {
+            const nextBotInfo = { ...botInfo, profilePic: liveProfilePic, updatedAt: Date.now() }
+            fs.writeFileSync('./data/botInfo.json', JSON.stringify(nextBotInfo, null, 2))
+        } catch (_) {}
+    }
+
     res.json({
         connected,
         account,
-        profilePic: botInfo.profilePic || null,
+        profilePic,
         uptime: process.uptime(),
         version: settings.version || '3.0.7',
         botName: settings.botName || 'Knight Bot',

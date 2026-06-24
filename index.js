@@ -140,6 +140,9 @@ async function startXeonBotInc() {
             keepAliveIntervalMs: 10000,
         })
 
+        // Make current socket available to dashboard APIs running in the same process.
+        global.botSocket = XeonBotInc
+
         // Start chat scheduler once the socket is ready to send messages
         startScheduler(XeonBotInc)
 
@@ -292,6 +295,24 @@ async function startXeonBotInc() {
             console.log(chalk.yellow(`🌿Connected to => ` + JSON.stringify(XeonBotInc.user, null, 2)))
 
             try {
+                const selfJid = XeonBotInc.decodeJid(XeonBotInc.user?.id || '')
+                let profilePic = null
+                try {
+                    if (selfJid) profilePic = await XeonBotInc.profilePictureUrl(selfJid, 'image')
+                } catch (_) {}
+
+                const botInfo = {
+                    id: XeonBotInc.user?.id || null,
+                    name: XeonBotInc.user?.name || null,
+                    profilePic: profilePic || null,
+                    updatedAt: Date.now(),
+                }
+                fs.writeFileSync('./data/botInfo.json', JSON.stringify(botInfo, null, 2))
+            } catch (e) {
+                console.error('Error refreshing botInfo profile data:', e.message)
+            }
+
+            try {
                 const botNumber = XeonBotInc.user.id.split(':')[0] + '@s.whatsapp.net';
                 await XeonBotInc.sendMessage(botNumber, {
                     text: `🤖 Bot Connected Successfully!\n\n⏰ Time: ${new Date().toLocaleString()}\n✅ Status: Online and Ready!\n\n✅Make sure to join below channel`,
@@ -324,6 +345,7 @@ async function startXeonBotInc() {
             const statusCode = lastDisconnect?.error?.output?.statusCode
             console.log(chalk.red(`Connection closed due to ${lastDisconnect?.error}, status: ${statusCode}`))
             try { fs.writeFileSync('./data/qrState.json', JSON.stringify({ status: 'disconnected', timestamp: Date.now() })) } catch {}
+            global.botSocket = null
 
             // Conflict (409/440) = same session active elsewhere (WhatsApp Web, other bot instance, etc.)
             if (statusCode === DisconnectReason.conflict || statusCode === 440 || statusCode === 409) {
