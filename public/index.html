@@ -211,6 +211,14 @@
           <label>Description</label>
           <input type="text" id="description" placeholder="Bot description..." />
         </div>
+        <div class="form-group">
+          <label>Alive Message <span style="color:var(--text-dim)">(optional, supports new lines)</span></label>
+          <textarea id="aliveMessage" rows="5" placeholder="Custom text for .alive"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Menu Message <span style="color:var(--text-dim)">(optional, kosongkan untuk menu default)</span></label>
+          <textarea id="menuMessage" rows="6" placeholder="Custom text for .menu"></textarea>
+        </div>
       </div>
       <div class="card">
         <div class="card-title">
@@ -763,6 +771,8 @@ async function loadSettings() {
     tzSelect.value = currentTz
     document.getElementById('packname').value = data.packname || ''
     document.getElementById('description').value = data.description || ''
+    document.getElementById('aliveMessage').value = data.aliveMessage || ''
+    document.getElementById('menuMessage').value = data.menuMessage || ''
   } catch(e) {}
 }
 
@@ -775,6 +785,8 @@ async function saveSettings() {
     timeZone: document.getElementById('timeZone').value.trim(),
     packname: document.getElementById('packname').value.trim(),
     description: document.getElementById('description').value.trim(),
+    aliveMessage: document.getElementById('aliveMessage').value,
+    menuMessage: document.getElementById('menuMessage').value,
   }
   try {
     const res = await fetch('/api/settings', {

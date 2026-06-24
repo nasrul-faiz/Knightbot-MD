@@ -311,6 +311,8 @@ app.get('/api/settings', (req, res) => {
         packname: settings.packname,
         author: settings.author,
         description: settings.description,
+        aliveMessage: settings.aliveMessage,
+        menuMessage: settings.menuMessage,
         version: settings.version,
     })
 })
@@ -318,12 +320,16 @@ app.get('/api/settings', (req, res) => {
 // ── API: Settings POST ──────────────────────────────────────────────────────
 app.post('/api/settings', (req, res) => {
     try {
-        const { botName, botOwner, ownerNumber, commandMode, timeZone, packname, description } = req.body
+        const { botName, botOwner, ownerNumber, commandMode, timeZone, packname, description, aliveMessage, menuMessage } = req.body
         const settingsPath = path.join(__dirname, 'settings.js')
         let content = fs.readFileSync(settingsPath, 'utf8')
 
         const replace = (key, value) => {
-            const escaped = String(value).replace(/\\/g, '\\\\').replace(/'/g, "\\'")
+            const escaped = String(value)
+                .replace(/\\/g, '\\\\')
+                .replace(/'/g, "\\'")
+                .replace(/\r/g, '\\r')
+                .replace(/\n/g, '\\n')
             content = content.replace(
                 new RegExp(`(${key}\\s*:\\s*)('(?:[^'\\\\]|\\\\.)*'|\"(?:[^\"\\\\]|\\\\.)*\")`),
                 `$1'${escaped}'`
@@ -344,6 +350,8 @@ app.post('/api/settings', (req, res) => {
         if (timeZone !== undefined) replace('timeZone', String(timeZone).trim())
         if (packname !== undefined) replace('packname', packname)
         if (description !== undefined) replace('description', description)
+        if (aliveMessage !== undefined) replace('aliveMessage', aliveMessage)
+        if (menuMessage !== undefined) replace('menuMessage', menuMessage)
 
         fs.writeFileSync(settingsPath, content, 'utf8')
 

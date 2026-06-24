@@ -2,8 +2,17 @@ const settings = require('../settings');
 const fs = require('fs');
 const path = require('path');
 
+function renderTemplate(text = '', replacements = {}) {
+    let output = String(text || '')
+    for (const [key, value] of Object.entries(replacements)) {
+        const pattern = new RegExp(`\\{${key}\\}`, 'gi')
+        output = output.replace(pattern, String(value))
+    }
+    return output
+}
+
 async function helpCommand(sock, chatId, message) {
-    const helpMessage = `
+    const defaultHelpMessage = `
 ╔═══════════════════╗
    *🤖 ${settings.botName || 'KnightBot-MD'}*  
    Version: *${settings.version || '3.0.0'}*
@@ -226,6 +235,15 @@ async function helpCommand(sock, chatId, message) {
 ╚═══════════════════╝
 
 Join our channel for updates:`;
+
+    const configuredMenuMessage = String(settings.menuMessage || '').trim()
+    const helpMessage = configuredMenuMessage
+        ? renderTemplate(configuredMenuMessage, {
+            botName: settings.botName || 'KnightBot-MD',
+            version: settings.version || '3.0.0',
+            owner: settings.botOwner || 'Owner',
+        })
+        : defaultHelpMessage
 
     try {
         const imagePath = path.join(__dirname, '../assets/bot_image.jpg');

@@ -1,16 +1,37 @@
 const settings = require("../settings");
+
+function renderTemplate(text = '', replacements = {}) {
+    let output = String(text || '')
+    for (const [key, value] of Object.entries(replacements)) {
+        const pattern = new RegExp(`\\{${key}\\}`, 'gi')
+        output = output.replace(pattern, String(value))
+    }
+    return output
+}
+
 async function aliveCommand(sock, chatId, message) {
     try {
-        const message1 = `*🤖 Knight Bot is Active!*\n\n` +
-                       `*Version:* ${settings.version}\n` +
-                       `*Status:* Online\n` +
-                       `*Mode:* Public\n\n` +
-                       `*🌟 Features:*\n` +
-                       `• Group Management\n` +
-                       `• Antilink Protection\n` +
-                       `• Fun Commands\n` +
-                       `• And more!\n\n` +
-                       `Type *.menu* for full command list`;
+        const modeLabel = settings.commandMode === 'private' ? 'Private' : 'Public'
+        const fallbackMessage = `*🤖 Knight Bot is Active!*\n\n` +
+            `*Version:* ${settings.version}\n` +
+            `*Status:* Online\n` +
+            `*Mode:* ${modeLabel}\n\n` +
+            `*🌟 Features:*\n` +
+            `• Group Management\n` +
+            `• Antilink Protection\n` +
+            `• Fun Commands\n` +
+            `• And more!\n\n` +
+            `Type *.menu* for full command list`
+
+        const configuredMessage = String(settings.aliveMessage || '').trim()
+        const message1 = configuredMessage
+            ? renderTemplate(configuredMessage, {
+                botName: settings.botName || 'Knight Bot',
+                version: settings.version || '3.0.0',
+                mode: modeLabel,
+                owner: settings.botOwner || 'Owner',
+            })
+            : fallbackMessage
 
         await sock.sendMessage(chatId, {
             text: message1,
