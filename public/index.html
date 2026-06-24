@@ -200,14 +200,10 @@
     </div>
     <div class="side-label">Menu</div>
     <nav class="side-nav">
-      <button class="nav-item active" onclick="showTab('settings', this)" title="Settings"><span class="nav-emoji">⚙️</span> <span class="nav-label">Settings</span></button>
-      <button class="nav-item" onclick="showTab('features', this)" title="Features"><span class="nav-emoji">🔧</span> <span class="nav-label">Features</span></button>
-      <button class="nav-item" onclick="showTab('groups', this)" title="Groups"><span class="nav-emoji">👥</span> <span class="nav-label">Groups</span></button>
+      <button class="nav-item active" onclick="showTab('settings', this)" title="Bot Setting"><span class="nav-emoji">⚙️</span> <span class="nav-label">Bot Setting</span></button>
+      <button class="nav-item" onclick="showTab('groupsettings', this)" title="Group Setting"><span class="nav-emoji">👥</span> <span class="nav-label">Group Setting</span></button>
       <button class="nav-item" onclick="showTab('schedules', this)" title="Schedules"><span class="nav-emoji">⏰</span> <span class="nav-label">Schedules</span></button>
-      <button class="nav-item" onclick="showTab('logs', this)" title="Logs"><span class="nav-emoji">📋</span> <span class="nav-label">Logs</span></button>
-      <button class="nav-item" onclick="showTab('banned', this)" title="Banned"><span class="nav-emoji">🚫</span> <span class="nav-label">Banned</span></button>
       <button class="nav-item" onclick="showTab('customcmds', this)" title="Custom Commands"><span class="nav-emoji">🤖</span> <span class="nav-label">Custom Commands</span></button>
-      <button class="nav-item" onclick="showTab('session', this)" title="Session"><span class="nav-emoji">🔗</span> <span class="nav-label">Session</span></button>
     </nav>
     <div class="side-status">
       <div class="dot" id="navDot"></div>
@@ -258,40 +254,6 @@
           <label>Description</label>
           <input type="text" id="description" placeholder="Bot description..." />
         </div>
-        <div class="form-group">
-          <label>Alive Message <span style="color:var(--text-dim)">(optional, supports new lines)</span></label>
-          <textarea id="aliveMessage" rows="5" placeholder="Custom text for .alive"></textarea>
-        </div>
-        <div class="form-group">
-          <label>Alive Image URL <span style="color:var(--text-dim)">(optional)</span></label>
-          <div style="display:flex;gap:8px;align-items:center">
-            <input type="text" id="aliveMediaUrl" placeholder="https://example.com/alive.jpg atau /uploads/..." />
-            <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('aliveMediaFile').click()">Upload</button>
-          </div>
-          <input type="file" id="aliveMediaFile" accept="image/*" style="display:none" onchange="uploadAliveMedia()" />
-          <div id="aliveMediaUploadStatus" style="font-size:12px;color:var(--text-dim);margin-top:6px"></div>
-        </div>
-        <div class="form-group">
-          <label>Alive Buttons (JSON) <span style="color:var(--text-dim)">(optional)</span></label>
-          <textarea id="aliveButtons" rows="4" placeholder='[{"name":"quick_reply","buttonParamsJson":"{\"display_text\":\"Menu\",\"id\":\".menu\"}"}]'></textarea>
-        </div>
-        <div class="form-group">
-          <label>Menu Message <span style="color:var(--text-dim)">(optional, kosongkan untuk menu default)</span></label>
-          <textarea id="menuMessage" rows="6" placeholder="Custom text for .menu"></textarea>
-        </div>
-        <div class="form-group">
-          <label>Menu Image URL <span style="color:var(--text-dim)">(optional)</span></label>
-          <div style="display:flex;gap:8px;align-items:center">
-            <input type="text" id="menuMediaUrl" placeholder="https://example.com/menu.jpg atau /uploads/..." />
-            <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('menuMediaFile').click()">Upload</button>
-          </div>
-          <input type="file" id="menuMediaFile" accept="image/*" style="display:none" onchange="uploadMenuMedia()" />
-          <div id="menuMediaUploadStatus" style="font-size:12px;color:var(--text-dim);margin-top:6px"></div>
-        </div>
-        <div class="form-group">
-          <label>Menu Buttons (JSON) <span style="color:var(--text-dim)">(optional)</span></label>
-          <textarea id="menuButtons" rows="5" placeholder='[{"name":"quick_reply","buttonParamsJson":"{\"display_text\":\"Ping\",\"id\":\".ping\"}"}]'></textarea>
-        </div>
       </div>
       <div class="card">
         <div class="card-title">
@@ -332,31 +294,96 @@
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- Features Tab -->
-  <div id="tab-features" style="display:none">
-    <div class="card">
-      <div class="card-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-        Auto Features
+    <div class="grid grid-2" style="margin-top:16px">
+      <div class="card">
+        <div class="card-title" style="justify-content:space-between">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:middle;margin-right:6px"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Console Logs
+          </span>
+          <button class="btn btn-outline btn-sm" onclick="loadLogs()">↻ Refresh</button>
+        </div>
+        <div class="log-container" id="logContainer">
+          <div class="log-empty">Loading logs...</div>
+        </div>
       </div>
-      <p style="font-size:13px;color:var(--text-dim);margin-bottom:16px">These are read from the bot's data files. To toggle them, use the corresponding bot commands in WhatsApp.</p>
-      <div id="featuresContent"></div>
+
+      <div class="card">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zm3 3h4v4h-4zm-3 3h3"/></svg>
+          Session Management
+        </div>
+
+        <div id="sessionInfoGrid" style="margin-bottom:16px;display:flex;flex-direction:column;gap:0">
+          <div style="font-size:13px;color:var(--text-dim);padding:8px 0">Loading session info...</div>
+        </div>
+
+        <div id="qrConnected" style="display:none;text-align:center;padding:10px 0;width:100%">
+          <div style="font-size:40px;margin-bottom:8px">✅</div>
+          <div style="font-weight:700;font-size:15px;color:var(--green)">Bot Connected</div>
+          <div id="qrConnectedAccount" style="margin-top:10px;padding:10px;background:var(--surface2);border-radius:8px;font-size:13px;text-align:left;line-height:1.8"></div>
+        </div>
+
+        <div id="qrWaiting" style="display:none;text-align:center;padding:16px">
+          <div class="qr-spin" style="font-size:40px;margin-bottom:10px">⏳</div>
+          <div style="font-weight:600;font-size:14px">Generating QR Code...</div>
+          <div style="font-size:12px;color:var(--text-dim);margin-top:4px">Please wait a moment.</div>
+        </div>
+
+        <div id="qrImageWrap" style="display:none;text-align:center;margin-bottom:10px">
+          <div style="background:#fff;padding:10px;border-radius:12px;display:inline-block;box-shadow:0 0 0 4px rgba(37,211,102,.3)">
+            <img id="qrImage" src="" alt="QR Code" style="width:200px;height:200px;display:block" />
+          </div>
+          <div style="margin-top:10px;font-size:12px;color:var(--text-dim)">Open WhatsApp → Linked Devices → Link a Device</div>
+          <div id="qrExpiry" style="margin-top:4px;font-size:12px;color:var(--yellow)"></div>
+        </div>
+
+        <div id="qrDefault" style="text-align:center;padding:10px">
+          <div style="font-size:34px;margin-bottom:8px">📱</div>
+          <div style="font-size:13px;color:var(--text-dim)">Loading session state...</div>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="btn btn-outline btn-sm" onclick="loadSession()" style="flex:1">↻ Refresh Session</button>
+          <button class="btn btn-sm" style="background:rgba(248,81,73,.15);color:var(--red);border:1px solid var(--red);flex:1" onclick="confirmReset()">🔓 Clear Session</button>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Groups Tab -->
-  <div id="tab-groups" style="display:none">
-    <div class="card">
-      <div class="card-title" style="justify-content:space-between">
-        <span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:middle;margin-right:6px"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
-          Groups
-        </span>
-        <button class="btn btn-outline btn-sm" onclick="loadGroups()">↻ Refresh</button>
+  <!-- Group Setting Tab -->
+  <div id="tab-groupsettings" style="display:none">
+    <div class="grid" style="gap:16px">
+      <div class="card">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          Auto Features
+        </div>
+        <p style="font-size:13px;color:var(--text-dim);margin-bottom:16px">These are read from the bot's data files. To toggle them, use the corresponding bot commands in WhatsApp.</p>
+        <div id="featuresContent"></div>
       </div>
-      <div id="groupsContent"><p style="color:var(--text-dim);font-size:13px">Loading...</p></div>
+
+      <div class="card">
+        <div class="card-title" style="justify-content:space-between">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:middle;margin-right:6px"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+            Groups
+          </span>
+          <button class="btn btn-outline btn-sm" onclick="loadGroups()">↻ Refresh</button>
+        </div>
+        <div id="groupsContent"><p style="color:var(--text-dim);font-size:13px">Loading...</p></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+          Banned Users
+        </div>
+        <div id="bannedContent">
+          <p style="color:var(--text-dim);font-size:13px">Loading...</p>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -405,35 +432,6 @@
         <button class="btn btn-outline btn-sm" onclick="loadSchedules(true)">↻ Refresh</button>
       </div>
       <div id="schedulesContent"><p style="color:var(--text-dim);font-size:13px">Loading...</p></div>
-    </div>
-  </div>
-
-  <!-- Logs Tab -->
-  <div id="tab-logs" style="display:none">
-    <div class="card">
-      <div class="card-title" style="justify-content:space-between">
-        <span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:middle;margin-right:6px"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-          Console Logs
-        </span>
-        <button class="btn btn-outline btn-sm" onclick="loadLogs()">↻ Refresh</button>
-      </div>
-      <div class="log-container" id="logContainer">
-        <div class="log-empty">Loading logs...</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Banned Tab -->
-  <div id="tab-banned" style="display:none">
-    <div class="card">
-      <div class="card-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
-        Banned Users
-      </div>
-      <div id="bannedContent">
-        <p style="color:var(--text-dim);font-size:13px">Loading...</p>
-      </div>
     </div>
   </div>
 
@@ -653,78 +651,6 @@
     </div>
   </div>
 
-  <!-- Session Tab -->
-  <div id="tab-session" style="display:none">
-    <div class="grid grid-2">
-
-      <!-- QR Panel -->
-      <div class="card" style="display:flex;flex-direction:column;align-items:center;gap:16px">
-        <div class="card-title" style="width:100%">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zm3 3h4v4h-4zm-3 3h3"/></svg>
-          WhatsApp Connection
-        </div>
-
-        <!-- Connected state -->
-        <div id="qrConnected" style="display:none;text-align:center;padding:10px 0;width:100%">
-          <div style="font-size:52px;margin-bottom:10px">✅</div>
-          <div style="font-weight:700;font-size:17px;color:var(--green)">Bot Connected</div>
-          <div style="font-size:13px;color:var(--text-dim);margin-top:4px">WhatsApp session active</div>
-          <div id="qrConnectedAccount" style="margin-top:14px;padding:12px;background:var(--surface2);border-radius:8px;font-size:13px;text-align:left;line-height:1.8"></div>
-        </div>
-
-        <!-- QR waiting state -->
-        <div id="qrWaiting" style="display:none;text-align:center;padding:20px">
-          <div class="qr-spin" style="font-size:48px;margin-bottom:12px">⏳</div>
-          <div style="font-weight:600;font-size:15px">Generating QR Code...</div>
-          <div style="font-size:13px;color:var(--text-dim);margin-top:6px">Please wait a moment.</div>
-        </div>
-
-        <!-- QR image -->
-        <div id="qrImageWrap" style="display:none;text-align:center">
-          <div style="background:#fff;padding:12px;border-radius:12px;display:inline-block;box-shadow:0 0 0 4px rgba(37,211,102,.3)">
-            <img id="qrImage" src="" alt="QR Code" style="width:220px;height:220px;display:block" />
-          </div>
-          <div style="margin-top:14px;font-size:13px;color:var(--text-dim)">Open WhatsApp → <b>Linked Devices</b> → <b>Link a Device</b></div>
-          <div id="qrExpiry" style="margin-top:6px;font-size:12px;color:var(--yellow)"></div>
-        </div>
-
-        <!-- Unknown / default -->
-        <div id="qrDefault" style="text-align:center;padding:20px">
-          <div style="font-size:48px;margin-bottom:12px">📱</div>
-          <div style="font-size:13px;color:var(--text-dim)">Loading session state...</div>
-        </div>
-
-        <button class="btn btn-outline btn-sm" onclick="loadSession()" style="margin-top:4px">↻ Refresh</button>
-      </div>
-
-      <!-- Session Management Panel -->
-      <div class="card">
-        <div class="card-title">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
-          Session Management
-        </div>
-
-        <!-- Live info grid -->
-        <div id="sessionInfoGrid" style="margin-bottom:20px;display:flex;flex-direction:column;gap:0">
-          <!-- populated by JS -->
-          <div style="font-size:13px;color:var(--text-dim);padding:8px 0">Loading session info...</div>
-        </div>
-
-        <!-- Danger zone -->
-        <div style="border-top:1px solid var(--border);padding-top:20px">
-          <div style="font-size:14px;font-weight:600;color:var(--red);margin-bottom:6px">⚠️ Re-link to New Number</div>
-          <div style="font-size:13px;color:var(--text-dim);line-height:1.6;margin-bottom:14px">
-            Padam session semasa dan tunjuk QR baru untuk link nombor lain.
-          </div>
-          <button class="btn btn-sm" style="background:rgba(248,81,73,.15);color:var(--red);border:1px solid var(--red);width:100%" onclick="confirmReset()">
-            🔓 Clear Session &amp; Show QR
-          </button>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
   <!-- Confirm modal -->
   <div id="confirmModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:none;align-items:center;justify-content:center">
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:28px;max-width:360px;width:90%;text-align:center">
@@ -774,14 +700,19 @@ function showTab(name, btn) {
   document.getElementById('tab-' + name).style.display = ''
   btn.classList.add('active')
   closeSidebar()
-  if (name === 'logs') loadLogs()
-  if (name === 'banned') loadBanned()
-  if (name === 'features') loadFeatures()
-  if (name === 'session') loadSession()
   if (name === 'customcmds') loadCustomCommands()
-  if (name === 'groups') loadGroups()
   if (name === 'schedules') loadSchedules(true)
-  if (name !== 'session') stopQrPoll()
+  if (name === 'groupsettings') {
+    loadFeatures()
+    loadGroups()
+    loadBanned()
+  }
+  if (name === 'settings') {
+    loadLogs()
+    loadSession()
+  } else {
+    stopQrPoll()
+  }
 }
 
 // ── Status ───────────────────────────────────────────────────────────────────
@@ -845,12 +776,6 @@ async function loadSettings() {
     tzSelect.value = currentTz
     document.getElementById('packname').value = data.packname || ''
     document.getElementById('description').value = data.description || ''
-    document.getElementById('aliveMessage').value = data.aliveMessage || ''
-    document.getElementById('aliveMediaUrl').value = data.aliveMediaUrl || ''
-    document.getElementById('aliveButtons').value = data.aliveButtons || ''
-    document.getElementById('menuMessage').value = data.menuMessage || ''
-    document.getElementById('menuMediaUrl').value = data.menuMediaUrl || ''
-    document.getElementById('menuButtons').value = data.menuButtons || ''
   } catch(e) {}
 }
 
@@ -863,12 +788,6 @@ async function saveSettings() {
     timeZone: document.getElementById('timeZone').value.trim(),
     packname: document.getElementById('packname').value.trim(),
     description: document.getElementById('description').value.trim(),
-    aliveMessage: document.getElementById('aliveMessage').value,
-    aliveMediaUrl: document.getElementById('aliveMediaUrl').value.trim(),
-    aliveButtons: document.getElementById('aliveButtons').value,
-    menuMessage: document.getElementById('menuMessage').value,
-    menuMediaUrl: document.getElementById('menuMediaUrl').value.trim(),
-    menuButtons: document.getElementById('menuButtons').value,
   }
   try {
     const res = await fetch('/api/settings', {
@@ -1562,48 +1481,6 @@ function handleCcEditFileChange() {
   uploadMediaFile(file, 'ccEditUploadBar', 'ccEditUploadStatus', 'ccEditUploadProgress', 'ccEditUploadedUrl', 'ccEditDropText')
 }
 
-async function uploadAliveMedia() {
-  const file = document.getElementById('aliveMediaFile').files[0]
-  const statusEl = document.getElementById('aliveMediaUploadStatus')
-  if (!file || !statusEl) return
-
-  statusEl.textContent = `Uploading ${file.name}...`
-  try {
-    const fd = new FormData()
-    fd.append('file', file)
-    const res = await fetch('/api/upload-media', { method: 'POST', body: fd }).then(r => r.json())
-    if (res.success) {
-      document.getElementById('aliveMediaUrl').value = res.url
-      statusEl.textContent = `✅ ${res.originalName} uploaded`
-    } else {
-      statusEl.textContent = `❌ ${res.error || 'Upload failed'}`
-    }
-  } catch (_) {
-    statusEl.textContent = '❌ Upload failed'
-  }
-}
-
-async function uploadMenuMedia() {
-  const file = document.getElementById('menuMediaFile').files[0]
-  const statusEl = document.getElementById('menuMediaUploadStatus')
-  if (!file || !statusEl) return
-
-  statusEl.textContent = `Uploading ${file.name}...`
-  try {
-    const fd = new FormData()
-    fd.append('file', file)
-    const res = await fetch('/api/upload-media', { method: 'POST', body: fd }).then(r => r.json())
-    if (res.success) {
-      document.getElementById('menuMediaUrl').value = res.url
-      statusEl.textContent = `✅ ${res.originalName} uploaded`
-    } else {
-      statusEl.textContent = `❌ ${res.error || 'Upload failed'}`
-    }
-  } catch (_) {
-    statusEl.textContent = '❌ Upload failed'
-  }
-}
-
 function getButtonTypeMeta(type) {
   switch (type) {
     case 'url':
@@ -2162,6 +2039,8 @@ async function saveEditCustomCommand() {
 // ── Init ──────────────────────────────────────────────────────────────────────
 loadStatus()
 loadSettings()
+loadLogs()
+loadSession()
 setInterval(loadStatus, 5000)
 </script>
 </body>

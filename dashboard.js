@@ -37,13 +37,26 @@ if (!global.dashboardLogs) global.dashboardLogs = []
 // Intercept console.log/error for logs
 const originalLog = console.log
 const originalError = console.error
-// Noise patterns to suppress from dashboard logs (still print to terminal)
+// Noise patterns to suppress from dashboard logs and (optionally) terminal.
+// Set SUPPRESS_NOISY_SESSION_LOGS=0 to keep all raw session logs in terminal.
+const SUPPRESS_NOISY_SESSION_LOGS = process.env.SUPPRESS_NOISY_SESSION_LOGS !== '0'
 const LOG_SUPPRESS = [
     /Failed to decrypt message/i,
+    /Session error:Error: Bad MAC/i,
+    /Bad MAC/i,
     /doDecryptWhisperMessage/i,
     /verifyMAC/i,
     /session_cipher/i,
     /Closing session/i,
+    /Closing open session in favor of incoming prekey bundle/i,
+    /Closing stale open session for new outgoing prekey bundle/i,
+    /SessionEntry\s*\{/i,
+    /_chains\s*:/i,
+    /currentRatchet\s*:/i,
+    /indexInfo\s*:/i,
+    /remoteIdentityKey\s*:/i,
+    /ephemeralKeyPair\s*:/i,
+    /rootKey\s*:/i,
     /Removing old closed session/i,
     /pendingPreKey/i,
     /ephemeralKeyPair/i,
@@ -69,8 +82,19 @@ function addLog(level, args) {
         if (lines.length > 500) fs.writeFileSync(LOG_FILE, lines.slice(-400).join('\n') + '\n')
     } catch (_) {}
 }
-console.log = (...args) => { addLog('info', args); originalLog(...args) }
-console.error = (...args) => { addLog('error', args); originalError(...args) }
+function shouldPrintToTerminal(args) {
+    if (!SUPPRESS_NOISY_SESSION_LOGS) return true
+    const msg = args.map(a => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ')
+    return !isSuppressed(msg)
+}
+console.log = (...args) => {
+    addLog('info', args)
+    if (shouldPrintToTerminal(args)) originalLog(...args)
+}
+console.error = (...args) => {
+    addLog('error', args)
+    if (shouldPrintToTerminal(args)) originalError(...args)
+}
 
 // ── Helper: safe JSON read ──────────────────────────────────────────────────
 function readJSON(filePath, fallback = null) {
