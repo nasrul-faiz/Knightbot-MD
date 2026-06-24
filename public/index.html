@@ -559,7 +559,7 @@
         <div style="font-size:13px;color:var(--text-dim);line-height:1.7">
           <b style="color:var(--text)">Trigger</b> — command yang user taip di WhatsApp. Contoh: <code style="background:var(--surface2);padding:1px 6px;border-radius:3px">.hello</code><br><br>
           <b style="color:var(--text)">Response</b> — mesej balasan bot (boleh teks, emoji, caption media).<br><br>
-          <b style="color:var(--text)">Buttons</b> — tambah nama tombol dan fungsi. Pilihan fungsi: quick reply, URL, call, dan WhatsApp.<br><br>
+          <b style="color:var(--text)">Buttons</b> — tambah nama tombol dan fungsi. Pilihan fungsi: list button, quick reply, URL, call, copy, dan WhatsApp.<br><br>
           <b style="color:var(--text)">Category</b> — untuk susun command dalam dashboard (General, Fun, Utility, dll).<br><br>
           <b style="color:var(--text)">Works in</b> — group dan private chat.<br><br>
           <b style="color:var(--text)">Priority</b> — custom command jalan selepas built-in command, jadi tak override command asal bot.
@@ -1460,10 +1460,17 @@ function handleCcEditFileChange() {
 
 function getButtonTypeMeta(type) {
   switch (type) {
+    case 'single_select':
+      return {
+        valueLabel: 'List Rows (JSON)',
+        placeholder: '[{"title":"Main Options","highlight_label":"Recommended","rows":[{"header":"Header 1","title":"Option 1","description":"Description 1","id":"id1"}]}]'
+      }
     case 'url':
       return { valueLabel: 'URL', placeholder: 'https://example.com' }
     case 'call':
       return { valueLabel: 'Phone Number', placeholder: '+628123456789' }
+    case 'copy':
+      return { valueLabel: 'Copy Text', placeholder: 'https://github.com/atex-ovi' }
     case 'whatsapp':
       return { valueLabel: 'WhatsApp Number', placeholder: '628123456789' }
     default:
@@ -1512,6 +1519,15 @@ function addCcButtonRow(containerId, button = {}) {
     }
   }
 
+  if (type === 'cta_url') type = 'url'
+  if (type === 'cta_call') type = 'call'
+  if (type === 'cta_copy') type = 'copy'
+
+  const labelValue = parsed.display_text || parsed.displayText || parsed.title || ''
+  const targetValue = type === 'single_select'
+    ? JSON.stringify(parsed.sections || [])
+    : (parsed.copy_code || parsed.id || parsed.url || parsed.phone_number || parsed.phoneNumber || '')
+
   const meta = getButtonTypeMeta(type)
   const row = document.createElement('div')
   row.className = 'cc-button-row'
@@ -1519,20 +1535,22 @@ function addCcButtonRow(containerId, button = {}) {
   row.innerHTML = `
     <div class="form-group" style="margin:0">
       <label>Button Name</label>
-      <input type="text" class="cc-button-label" placeholder="Click me" value="${escapeAttr(parsed.display_text || parsed.displayText || '')}" />
+      <input type="text" class="cc-button-label" placeholder="Click me" value="${escapeAttr(labelValue)}" />
     </div>
     <div class="form-group" style="margin:0">
       <label>Function</label>
       <select class="cc-button-type" onchange="syncCcButtonRow(this)">
+        <option value="single_select">List Button</option>
         <option value="quick_reply">Quick Reply</option>
         <option value="url">URL</option>
         <option value="call">Call</option>
+        <option value="copy">Copy</option>
         <option value="whatsapp">WhatsApp</option>
       </select>
     </div>
     <div class="form-group" style="margin:0">
       <label class="cc-button-target-label">${meta.valueLabel}</label>
-      <input type="text" class="cc-button-target" placeholder="${meta.placeholder}" value="${escapeAttr(parsed.id || parsed.url || parsed.phone_number || parsed.phoneNumber || '')}" />
+      <input type="text" class="cc-button-target" placeholder="${meta.placeholder}" value="${escapeAttr(targetValue)}" />
     </div>
     <button type="button" class="btn btn-sm" style="background:rgba(248,81,73,.15);color:var(--red);border:1px solid rgba(248,81,73,.4);height:38px" onclick="removeCcButtonRow(this)">Remove</button>
   `
@@ -1585,7 +1603,25 @@ function collectCcButtons(containerId) {
     }
 
     const index = buttons.length + 1
-    if (type === 'quick_reply') {
+    if (type === 'single_select') {
+      let sections = []
+      try {
+        sections = JSON.parse(target || '[]')
+      } catch (_) {
+        throw new Error('List rows must be valid JSON.')
+      }
+      if (!Array.isArray(sections) || !sections.length) {
+        throw new Error('List rows JSON must be a non-empty array.')
+      }
+      buttons.push({
+        index,
+        name: 'single_select',
+        buttonParamsJson: JSON.stringify({
+          title: label,
+          sections
+        })
+      })
+    } else if (type === 'quick_reply') {
       buttons.push({
         index,
         quickReplyButton: {
@@ -1608,6 +1644,15 @@ function collectCcButtons(containerId) {
           displayText: label,
           phoneNumber: target
         }
+      })
+    } else if (type === 'copy') {
+      buttons.push({
+        index,
+        name: 'cta_copy',
+        buttonParamsJson: JSON.stringify({
+          display_text: label,
+          copy_code: target
+        })
       })
     } else if (type === 'whatsapp') {
       const digits = String(target).replace(/\D/g, '')
