@@ -201,6 +201,10 @@
   }
   .cc-button-extra { margin-top: 8px; }
   .cc-button-hint { font-size: 11px; color: var(--text-dim); margin-top: 5px; }
+  .cc-select-builder { margin-top: 10px; padding: 10px; border: 1px dashed rgba(255,255,255,.14); border-radius: 8px; background: rgba(255,255,255,.03); }
+  body[data-theme='light'] .cc-select-builder { border: 1px dashed rgba(15,23,42,.18); background: rgba(148,163,184,.08); }
+  .cc-select-row { display: grid; grid-template-columns: 1fr 1.5fr 1.5fr auto; gap: 6px; align-items: end; margin-bottom: 6px; }
+  .cc-select-row input { font-size: 12px; padding: 6px 8px; }
   .theme-toggle {
     border: 1px solid var(--border);
     background: var(--surface2);
@@ -1752,10 +1756,10 @@ function getButtonTypeMeta(type) {
       return {
         targetLabel: 'List Title',
         placeholder: 'Select Option',
-        extraLabel: 'Rows (one per line: id|title|description|header)',
-        extraPlaceholder: 'plan_basic|Basic Plan|Good for starter|Plan\nplan_pro|Pro Plan|For power user|Plan',
+        extraLabel: '',
+        extraPlaceholder: '',
         showTarget: true,
-        showExtra: true,
+        showExtra: false,
         hint: 'Creates WhatsApp list button with selectable rows.'
       }
     default:
@@ -1911,15 +1915,36 @@ function addCcButtonRow(containerId, button = {}) {
       <label class="cc-button-extra-label"></label>
       <textarea class="cc-button-extra-input" placeholder=""></textarea>
     </div>
+    <div class="cc-select-builder" style="display:none">
+      <div style="font-size:12px;font-weight:600;color:var(--text-dim);margin-bottom:8px;letter-spacing:.03em">📋 LIST OPTIONS</div>
+      <div style="margin-bottom:8px">
+        <label style="font-size:12px">Section Title <span style="color:var(--text-dim)">(optional)</span></label>
+        <input type="text" class="cc-section-title" placeholder="Options" style="margin-top:4px;font-size:12px;padding:6px 8px" />
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1.5fr 1.5fr 28px;gap:6px;margin-bottom:4px">
+        <span style="font-size:11px;color:var(--text-dim);padding-left:2px">ID</span>
+        <span style="font-size:11px;color:var(--text-dim);padding-left:2px">Title <span style="color:var(--red)">*</span></span>
+        <span style="font-size:11px;color:var(--text-dim);padding-left:2px">Description</span>
+        <span></span>
+      </div>
+      <div class="cc-select-rows" style="display:flex;flex-direction:column;gap:4px"></div>
+      <button type="button" class="btn btn-outline btn-sm" onclick="addCcSelectRow(this)" style="margin-top:8px;font-size:12px">+ Add Option</button>
+    </div>
     <div class="cc-button-hint"></div>
   `
 
   container.appendChild(row)
   const typeSelect = row.querySelector('.cc-button-type')
   typeSelect.value = type
-  if (parsed.rowsText) {
-    row.querySelector('.cc-button-extra-input').value = parsed.rowsText
+
+  if (type === 'single_select' && parsed.sections) {
+    const section = parsed.sections[0] || {}
+    const sectionTitle = section.title || ''
+    row.querySelector('.cc-section-title').value = sectionTitle
+    const rows = Array.isArray(section.rows) ? section.rows : []
+    rows.forEach(r => addCcSelectRow(row.querySelector('.btn-outline.btn-sm[onclick]'), r))
   }
+
   syncCcButtonRow(typeSelect)
 }
 
@@ -1931,7 +1956,8 @@ function removeCcButtonRow(buttonEl) {
 function syncCcButtonRow(selectEl) {
   const row = selectEl.closest('.cc-button-row')
   if (!row) return
-  const meta = getButtonTypeMeta(selectEl.value)
+  const type = selectEl.value
+  const meta = getButtonTypeMeta(type)
 
   const targetWrap = row.querySelector('.cc-button-target').closest('.form-group')
   const targetLabel = row.querySelector('.cc-button-target-label')
@@ -1947,7 +1973,46 @@ function syncCcButtonRow(selectEl) {
   extraLabel.textContent = meta.extraLabel
   extraInput.placeholder = meta.extraPlaceholder
 
+  const selectBuilder = row.querySelector('.cc-select-builder')
+  if (selectBuilder) {
+    selectBuilder.style.display = type === 'single_select' ? '' : 'none'
+    if (type === 'single_select' && row.querySelectorAll('.cc-select-row').length === 0) {
+      addCcSelectRow(selectBuilder.querySelector('.btn-outline'))
+    }
+  }
+
   row.querySelector('.cc-button-hint').textContent = meta.hint || ''
+}
+
+function addCcSelectRow(btnEl, prefill = {}) {
+  const builder = btnEl.closest('.cc-select-builder')
+  if (!builder) return
+  const container = builder.querySelector('.cc-select-rows')
+  const rowEl = document.createElement('div')
+  rowEl.className = 'cc-select-row'
+  const idVal = escapeAttr(prefill.id || '')
+  const titleVal = escapeAttr(prefill.title || '')
+  const descVal = escapeAttr(prefill.description || '')
+  rowEl.innerHTML = `
+    <input type="text" class="cc-sr-id" placeholder="option_1" value="${idVal}" title="ID (auto-filled if empty)" />
+    <input type="text" class="cc-sr-title" placeholder="Option title" value="${titleVal}" />
+    <input type="text" class="cc-sr-desc" placeholder="Description (optional)" value="${descVal}" />
+    <button type="button" title="Remove" onclick="this.closest('.cc-select-row').remove()" style="background:rgba(248,81,73,.15);color:var(--red);border:1px solid rgba(248,81,73,.3);border-radius:6px;cursor:pointer;font-size:13px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;padding:0">✕</button>
+  `
+  container.appendChild(rowEl)
+}
+
+function collectCcSelectRows(row) {
+  const rows = []
+  row.querySelectorAll('.cc-select-row').forEach((el, idx) => {
+    const title = el.querySelector('.cc-sr-title').value.trim()
+    if (!title) return
+    const rawId = el.querySelector('.cc-sr-id').value.trim()
+    const id = rawId || title.toLowerCase().replace(/\s+/g, '_').replace(/[^\w-]/g, '') + '_' + (idx + 1)
+    const description = el.querySelector('.cc-sr-desc').value.trim()
+    rows.push({ id, title, ...(description ? { description } : {}) })
+  })
+  return rows
 }
 
 function resetCcButtonRows(containerId, buttons = []) {
@@ -2017,7 +2082,9 @@ function collectCcButtons(containerId) {
       })
     } else if (type === 'single_select') {
       if (!target) throw new Error('List title is required for single_select button.')
-      const rowsData = parseSingleSelectRowsInput(extra)
+      const rowsData = collectCcSelectRows(row)
+      if (!rowsData.length) throw new Error('single_select button needs at least 1 option with a title.')
+      const sectionTitle = row.querySelector('.cc-section-title')?.value.trim() || 'Options'
       buttons.push({
         index,
         name: 'single_select',
@@ -2025,7 +2092,7 @@ function collectCcButtons(containerId) {
           title: target,
           sections: [
             {
-              title: 'Options',
+              title: sectionTitle,
               rows: rowsData
             }
           ]

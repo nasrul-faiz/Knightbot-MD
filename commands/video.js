@@ -29,12 +29,21 @@ async function getEliteProTechVideoByUrl(youtubeUrl) {
     const apiUrl = `https://eliteprotech-apis.zone.id/ytdown?url=${encodeURIComponent(youtubeUrl)}&format=mp4`;
     const res = await tryRequest(() => axios.get(apiUrl, AXIOS_DEFAULTS));
     if (res?.data?.success && res?.data?.downloadURL) {
-        return {
-            download: res.data.downloadURL,
-            title: res.data.title
-        };
+        return { download: res.data.downloadURL, title: res.data.title };
     }
     throw new Error('EliteProTech ytdown returned no download');
+}
+
+async function getAiooVideoByUrl(youtubeUrl) {
+    const apiUrl = `https://api.aioo.my.id/download/ytmp4?url=${encodeURIComponent(youtubeUrl)}`;
+    const res = await tryRequest(() => axios.get(apiUrl, AXIOS_DEFAULTS));
+    if (res?.data?.data?.download_url || res?.data?.download_url) {
+        return {
+            download: res.data.data?.download_url || res.data.download_url,
+            title: res.data.data?.title || res.data.title
+        };
+    }
+    throw new Error('Aioo API returned no download');
 }
 
 async function getYupraVideoByUrl(youtubeUrl) {
@@ -118,7 +127,8 @@ async function videoCommand(sock, chatId, message) {
         const apiMethods = [
             { name: 'EliteProTech', method: () => getEliteProTechVideoByUrl(videoUrl) },
             { name: 'Yupra', method: () => getYupraVideoByUrl(videoUrl) },
-            { name: 'Okatsu', method: () => getOkatsuVideoByUrl(videoUrl) }
+            { name: 'Okatsu', method: () => getOkatsuVideoByUrl(videoUrl) },
+            { name: 'Aioo', method: () => getAiooVideoByUrl(videoUrl) }
         ];
         
         // Try each API until we successfully get video data
