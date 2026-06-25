@@ -28,6 +28,7 @@ setInterval(() => {
 const settings = require('./settings');
 require('./config.js');
 const { isBanned } = require('./lib/isBanned');
+const store = require('./lib/lightweight_store');
 const yts = require('yt-search');
 const { fetchBuffer } = require('./lib/myfunc');
 const fetch = require('node-fetch');
@@ -119,6 +120,7 @@ const spotifyCommand = require('./commands/spotify');
 const playCommand = require('./commands/play');
 const tiktokCommand = require('./commands/tiktok');
 const songCommand = require('./commands/song');
+const toMp3Command = require('./commands/tomp3');
 const aiCommand = require('./commands/ai');
 const urlCommand = require('./commands/url');
 const { handleTranslateCommand } = require('./commands/translate');
@@ -425,6 +427,20 @@ async function handleMessages(sock, messageUpdate, printLog) {
         const chatId = message.key.remoteJid;
         const senderId = message.key.participant || message.key.remoteJid;
         const isGroup = chatId.endsWith('@g.us');
+
+        // Cache group name in store if not yet known
+        if (isGroup) {
+            const cached = store.chats[chatId];
+            if (!cached || !cached.subject) {
+                try {
+                    const meta = await sock.groupMetadata(chatId);
+                    if (meta?.subject) {
+                        store.chats[chatId] = { id: chatId, subject: meta.subject };
+                    }
+                } catch (_) {}
+            }
+        }
+
         const senderIsSudo = await isSudo(senderId);
         const senderIsOwnerOrSudo = await isOwnerOrSudo(senderId, sock, chatId);
 
@@ -1174,6 +1190,9 @@ async function handleMessages(sock, messageUpdate, printLog) {
                 break;
             case userMessage.startsWith('.video') || userMessage.startsWith('.ytmp4'):
                 await videoCommand(sock, chatId, message);
+                break;
+            case userMessage.startsWith('.tomp3') || userMessage.startsWith('.mp4tomp3') || userMessage.startsWith('.vtomp3'):
+                await toMp3Command(sock, chatId, message);
                 break;
             case userMessage.startsWith('.tiktok') || userMessage.startsWith('.tt'):
                 await tiktokCommand(sock, chatId, message);
