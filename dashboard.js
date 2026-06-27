@@ -3,6 +3,7 @@ const fs = require('fs')
 const path = require('path')
 const multer = require('multer')
 const moment = require('moment-timezone')
+const { isSuppressed } = require('./lib/logFilter')
 const {
     listAllSchedules,
     addDailySchedule,
@@ -41,31 +42,6 @@ const originalStderrWrite = process.stderr.write.bind(process.stderr)
 // Noise patterns to suppress from dashboard logs and (optionally) terminal.
 // Set SUPPRESS_NOISY_SESSION_LOGS=0 to keep all raw session logs in terminal.
 const SUPPRESS_NOISY_SESSION_LOGS = process.env.SUPPRESS_NOISY_SESSION_LOGS !== '0'
-const LOG_SUPPRESS = [
-    /Failed to decrypt message/i,
-    /Session error:Error: Bad MAC/i,
-    /Bad MAC/i,
-    /doDecryptWhisperMessage/i,
-    /verifyMAC/i,
-    /session_cipher/i,
-    /Closing session/i,
-    /Closing open session in favor of incoming prekey bundle/i,
-    /Closing stale open session for new outgoing prekey bundle/i,
-    /SessionEntry\s*\{/i,
-    /_chains\s*:/i,
-    /currentRatchet\s*:/i,
-    /indexInfo\s*:/i,
-    /remoteIdentityKey\s*:/i,
-    /ephemeralKeyPair\s*:/i,
-    /rootKey\s*:/i,
-    /Removing old closed session/i,
-    /pendingPreKey/i,
-    /ephemeralKeyPair/i,
-    /lastRemoteEphemeralKey/i,
-    /registrationId/i,
-    /baseKeyType/i,
-]
-function isSuppressed(msg) { return LOG_SUPPRESS.some(re => re.test(msg)) }
 
 const LOG_FILE = path.join(__dirname, 'data', 'bot.log')
 
@@ -87,19 +63,6 @@ function shouldPrintToTerminal(args) {
     if (!SUPPRESS_NOISY_SESSION_LOGS) return true
     const msg = args.map(a => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ')
     return !isSuppressed(msg)
-}
-process.stderr.write = (chunk, encoding, callback) => {
-    if (!SUPPRESS_NOISY_SESSION_LOGS) {
-        return originalStderrWrite(chunk, encoding, callback)
-    }
-
-    const text = Buffer.isBuffer(chunk) ? chunk.toString('utf8') : String(chunk)
-    if (isSuppressed(text)) {
-        if (typeof callback === 'function') callback()
-        return true
-    }
-
-    return originalStderrWrite(chunk, encoding, callback)
 }
 console.log = (...args) => {
     addLog('info', args)

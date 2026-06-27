@@ -10,6 +10,7 @@
  * - Pair Code implementation inspired by TechGod143 & DGXEON
  */
 require('./settings')
+require('./lib/logFilter').installLogFilter()
 // Start the web dashboard inside the bot process so it shares logs/state.
 // Required early so dashboard.js's console interception captures bot logs,
 // and so /api/session/reset (process.exit) restarts the bot itself.
